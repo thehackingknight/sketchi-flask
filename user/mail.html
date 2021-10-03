@@ -1,0 +1,72 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style type="text/css">
+
+
+            .sketchi{
+                font-family: Poppins, Roboto,Helvetica Neue,sans-serif !important;
+                text-align: center;
+                width: 80%;
+                margin: auto;
+                padding: 10px;
+                height: 80%;
+                overflow: scroll;
+            }
+
+            .sketchi *, .sketchi{
+                -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+            }
+
+            .sketchi::-webkit-scrollbar{
+                display: none;
+              }
+
+            .btn {
+                display: inline-block;
+                font-weight: 400;
+                line-height: 1.5;
+                color: #212529;
+                text-align: center;
+                text-decoration: none;
+                vertical-align: middle;
+                cursor: pointer;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                user-select: none;
+                background-color: transparent;
+                border: 1px solid transparent;
+                padding: .375rem .75rem;
+                font-size: 1rem;
+                border-radius: .25rem;
+                transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+            }
+            .btn-primary {
+                color: #fff;
+                background-color: #0d6efd;
+                border-color: #0d6efd;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="sketchi">
+
+    <h1>Thank you for signing up to Sketchi!</h1>
+
+    <p>Click the button to verify your account.</p>
+    <a href={url} target="_blank" class="btn btn-primary">Verify</a>
+    
+    <p>If button did not work use this link.</p>
+    <a href={url} target="_blank">{url}</a>
+
+    <h3>The verification is valid for only 48hrs</h3>
+
+    <p>For support please contact us at <a href="mailto:clickbait@gmail.com">clickbait@gmail.com</a></p>
+    </div>
+    
+</body>
+</html>
