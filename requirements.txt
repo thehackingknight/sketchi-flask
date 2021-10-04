@@ -8,6 +8,7 @@ click==8.0.1
 cloudinary==1.26.0
 colorama==0.4.4
 cryptography==3.4.8
+dnspython==1.16.0
 Flask==2.0.1
 Flask-Bcrypt==0.7.1
 Flask-Cors==3.0.10

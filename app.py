@@ -41,14 +41,15 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('ADMIN_EMAIL')
 #app.config['MAIL_ASCII_ATTACHEMENTS'] = False
 # Connect Database
 
-
 try:
-    engine.connect(db='sketchi', host='localhost', port=27017)
+    
+    engine.connect(
+        db="sketchi",
+        host=os.getenv('MONGO_URL'), ssl=True,ssl_cert_reqs='CERT_NONE')
     print('Database connection established')
 except Exception as e:
     print(e)
 
-# Blueprints
 
 app.register_blueprint(user_router)
 app.register_blueprint(song_router)
@@ -96,7 +97,6 @@ def songs():
 
 if __name__ == '__main__':
 
-    #socketio.run(app, port=5500)
     app.run(port=5500, debug=True)
 
 
