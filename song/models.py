@@ -1,8 +1,7 @@
 from flask import Flask,jsonify
 import mongoengine as me
 from datetime import datetime
-import json
-
+import json, os
 class Response(me.EmbeddedDocument):
     by = me.StringField()  
     body = me.StringField()
@@ -59,7 +58,8 @@ class Song(me.Document):
     year = me.StringField()
     image = me.StringField(
         default= os.getenv('DB_URL') + "/sketchi/media/images/songdummy.png")
-    url= me.StringField(default= os.getenv('DB_URL') + "/sketchi/media/songs/dummy")
+    url= me.StringField(
+        default= os.getenv('DB_URL') + "/sketchi/media/songs/dummy")
     
     date_created = me.DateTimeField(
         default=datetime.now()
