@@ -57,8 +57,9 @@ class Song(me.Document):
     comments = me.ListField(me.EmbeddedDocumentField(Comment))
     playlist = me.ListField()
     year = me.StringField()
-    image = me.StringField(default="http://localhost:5500/sketchi/media/images/songdummy.png")
-    url= me.StringField(default="http://localhost:5500/sketchi/media/songs/dummy")
+    image = me.StringField(
+        default= os.getenv('DB_URL') + "/sketchi/media/images/songdummy.png")
+    url= me.StringField(default= os.getenv('DB_URL') + "/sketchi/media/songs/dummy")
     
     date_created = me.DateTimeField(
         default=datetime.now()

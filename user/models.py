@@ -1,6 +1,6 @@
 
 from mongoengine import Document, ListField, StringField, URLField, BooleanField, DateTimeField, ReferenceField
-import json
+import json, os
 from datetime import datetime
 
 class User(Document):
@@ -34,7 +34,7 @@ class User(Document):
     )
 
     avatar = URLField(
-        default = "http://localhost:5500/sketchi/media/images/avatardummy.jpg"
+        default = os.getenv('DB_URL') + "/sketchi/media/images/avatardummy.jpg"
     )
     followers = ListField()    
     following = ListField()    
