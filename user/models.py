@@ -2,7 +2,7 @@
 from mongoengine import Document, ListField, StringField, URLField, BooleanField, DateTimeField, ReferenceField
 import json, os
 from datetime import datetime
-
+DB_URL = 'https://sketchidb.herokuapp.com' #'http://localhost:5500'
 class User(Document):
 
     username = StringField(
@@ -34,7 +34,7 @@ class User(Document):
     )
 
     avatar = URLField(
-        default = os.getenv('DB_URL') + "/sketchi/media/images/avatardummy.jpg"
+        default = DB_URL + "/sketchi/media/images/avatardummy.jpg"
     )
     followers = ListField()    
     following = ListField()    
