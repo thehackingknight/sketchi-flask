@@ -8,7 +8,7 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from datetime import datetime
 import time
-
+from io import BytesIO
 router = Blueprint('song', __name__)
 bcrypt = Bcrypt()
 
@@ -47,7 +47,7 @@ def upload():
             song.iid = gen_id(7, 'songs')
             song.uploader = user.iid
             song.save()
-            user.songs.append(song)
+            user.songs.append(song.iid)
             user.save()
             return jsonify({'songId' : song.iid})
 
@@ -132,8 +132,7 @@ def media(folder, filename):
             filepath = 'sketchi/media/songs/' + filename
         elif folder == 'images':
             filepath = 'sketchi/media/images/' + filename
-        print(filepath)
-        return send_file(filepath, as_attachment=True)
+        return send_file(filepath, attachment_filename='file', as_attachment=False)
     except Exception as e:
         print(e)
         return {'message': 'Could not find file specified'}, 404
@@ -160,7 +159,62 @@ def update_song(iid):
     return {'data': 'Song updated'}
 
 
+@router.route('/song/<iid>/like', methods=['POST'])
+@jwt_required()
+def likes(iid):
 
+    try:
+
+        email = get_jwt_identity()
+        action = request.args['act']
+        if email:
+            user = User.objects(email=email)[0]
+            song = Song.objects(iid=iid)[0]
+
+            if action == 'like':
+                if user.iid not in song.likes:
+                    song.likes.append(user.iid)
+                    song.save()
+                    return {'data': 'Song liked'}, 200
+
+                else:
+                    return {'User already likes the song'}, 400
+
+            elif action== 'dislike':
+                song.likes.remove(user.iid)
+                song.save()
+
+                return {'data': 'Song disliked'}, 200
+        else:
+            return {'message' : 'User not logged'}, 401
+
+    except Exception as e:
+        print(e)
+        return 'Som went wrong', 500
+
+@router.route('/song/<iid>/delete', methods=['POST'])
+@jwt_required()
+def delete_song(iid):
+    try:
+        email = get_jwt_identity()
+        user = User.objects(email=email).first()
+        if user:
+            song = Song.objects(iid=iid).first()
+
+            if song:
+                print(iid)
+                print(user.songs)
+                user.songs.remove(iid)
+                song.delete()
+                user.save()
+                return 'Song deleted successfully', 200
+            else:
+                return {'message' : "Something went wrong"}, 500
+
+    except Exception as e:
+        print(e)
+        return {'message' : "Something went wrong"}, 500
+            
 @router.route('/song/<iid>/comment', methods=['POST'])
 @jwt_required()
 def comments(iid):

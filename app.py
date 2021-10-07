@@ -27,7 +27,7 @@ app.config['DEBUG'] = True
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=48)
 
-app.config['SECRET_KEY'] = "marindatomatotirindata"
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['MAIL_SERVER'] = "smtp.gmail.com"
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = False
@@ -41,14 +41,8 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('ADMIN_EMAIL')
 #app.config['MAIL_ASCII_ATTACHEMENTS'] = False
 # Connect Database
 
-try:
-    
-    engine.connect(
-        db="sketchi",
-        host=os.getenv('MONGO_URL'), ssl=True,ssl_cert_reqs='CERT_NONE')
-    print('Database connection established')
-except Exception as e:
-    print(e)
+
+engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
 
 
 app.register_blueprint(user_router)

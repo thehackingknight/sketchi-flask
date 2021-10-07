@@ -52,12 +52,13 @@ class Song(me.Document):
     description =me.StringField(max_length=100)
     iid =  me.StringField(required=True, max_length=7)
     of_type = me.StringField(max_length=10)
-    likers = me.ListField()
+    likes = me.ListField()
+    shares = me.ListField()
     comments = me.ListField(me.EmbeddedDocumentField(Comment))
     playlist = me.ListField()
     year = me.StringField()
     image = me.StringField(default="http://localhost:5500/sketchi/media/images/songdummy.png")
-    url= me.StringField(default="http://localhost:5500/sketchi/media/songs/dummy.mp3")
+    url= me.StringField(default="http://localhost:5500/sketchi/media/songs/dummy")
     
     date_created = me.DateTimeField(
         default=datetime.now()

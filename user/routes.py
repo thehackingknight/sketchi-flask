@@ -132,14 +132,14 @@ def gen_token(identity, hours=1):
 def users():
 
     users = User.objects()
-    data = []
-    if users:
+    
+    def clean_users(user):
 
-        for user in users:
+        user = user.to_json()
+        return json.loads(user)
 
-            user = user._data
-            user['id'] = str(user['id'])
-            data.append(user)
+    data = list(map(clean_users, users))
+    #print(data)
 
     return {'users': data}
     
@@ -327,6 +327,52 @@ def user(iid):
 
     try:
         user = User.objects(iid = iid)
+        feature = request.args['f']
+
+        if feature == 'playlist':
+            verify_jwt_in_request()
+            email = get_jwt_identity()
+            
+            if email:
+                user = User.objects(email=email).first()
+                songs = []
+                for song_id in user.playlist:
+                    song = Song.objects(iid=song_id).first()
+                    songs.append(song)
+
+                def clean_replies(resp):
+                    by = User.objects(iid=resp.by)[0].to_json()
+                    resp.by = json.loads(by)
+                    return json.loads(resp.to_json())
+
+                def clean_comments(comment):
+                    commenter = User.objects(iid=comment.commenter)[0].to_json()
+                    comment.commenter = json.loads(commenter)
+                    comment.replies = list(map(clean_replies, comment.replies))
+                    return json.loads(comment.to_json())
+
+                def clean_songs(song):
+                    uploader = User.objects(iid=song.uploader)[0].to_json()
+                    song.uploader = json.loads(uploader)
+                    song.comments = list(map(clean_comments, song.comments))
+
+                    song = song.to_json()
+                    return json.loads(song)
+
+                data = list(map(clean_songs, songs))
+                try:
+                    #print(tracks.get())
+                    return jsonify({'songs': data}), 200
+                except  Exception as e:
+                    print(e)
+                    return 'Exception'                 
+                
+
+                return 'Yima nyana'
+            else:
+                return 'Auth required', 401
+
+
         if user:
             user = user[0]._data
             del user['id']
@@ -346,6 +392,7 @@ def user(iid):
 def update_user(iid):
     feature = request.args['f']
     user = User.objects(iid=iid)[0]
+
     if feature == 'info':
         try:
             info = request.form
@@ -376,7 +423,17 @@ def update_user(iid):
             user.avatar = upload_result['url']
             user.save()
             return jsonify(upload_result)
+    elif feature == 'playlist':
+        song_id = request.form['song_id']
+        if song_id in user.playlist:
+            user.playlist.remove(song_id)
 
+        else:
+            user.playlist.append(song_id)
+
+        user.save()
+        print( list(user.playlist))
+        return {'playlist' : user.playlist}
 
 @router.route('/auth/confirm', methods=['POST'])
 def confirm():
@@ -415,3 +472,29 @@ def terminate(iid):
     except Exception as e:
         print(e)
         return {'message' : 'Something went wrong'}, 500
+
+@router.route('/user/<iid>/confirm-password', methods=['POST'])
+@jwt_required()
+def confirm_pass(iid):
+
+    try:
+        email = get_jwt_identity()
+        password = request.form['password']
+        if email:
+            user = User.objects(email=email).first()
+
+            if user:
+                pass_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), password)
+                if pass_correct:
+                    return 'Password correct', 200
+
+                else:
+                    return {"message" : "Incorrect password"}, 400
+
+            else:
+
+                return "Unauthorized", 401
+
+    except Exception as e:
+        print(e)
+        return 'Something went wrong', 500
