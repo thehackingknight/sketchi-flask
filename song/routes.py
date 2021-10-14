@@ -8,6 +8,8 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from datetime import datetime
 import time
+import uuid
+from media.models import Media
 from io import BytesIO
 router = Blueprint('song', __name__)
 bcrypt = Bcrypt()
@@ -35,34 +37,65 @@ def upload():
 
     try:
 
-        user = get_jwt_identity()
-        print(user)
-
+        email = get_jwt_identity()
+        files = request.files
+        user = User.objects(email=email).first()
         if user:
-            user = User.objects(email=user)[0]
-            song = Song()
-            for key, value in request.form.items():
-                setattr(song, key, value)
+            print(user)
+            try:
+                
+                song = Song()
+                form = request.form
+                for key, value in form.items():
+                    if key != 'collabos' and key != 'tags':
+                        setattr(song, key, value)
+                song.collabos = json.loads(form['collabos'])
+                song.tags = json.loads(form['tags'])
 
-            song.iid = gen_id(7, 'songs')
-            song.uploader = user.iid
-            song.save()
-            user.songs.append(song.iid)
-            user.save()
-            return jsonify({'songId' : song.iid})
+                song.iid = gen_id(7, 'songs')
+                song.uploader = user.iid
+                
+                if 'image' in files:
+                    img = files["image"]
+                    image = Media()
+                    image.name = 'sketchi_' + uuid.uuid4().hex
+                    image._type = "image"
+                    image._file.put(img, content_type=img.mimetype)
+                    image.save()
+
+                    song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
+
+                if 'audio' in files:
+                    aud = files["audio"]
+                    track = Media()
+                    track.name = 'sketchi_' + uuid.uuid4().hex
+                    track._type = "audio"
+
+                    track._file.put(aud, content_type=aud.mimetype)
+                    track.save()
+
+                    song.url = os.getenv('DB_URL') + '/media/songs/' + str(track.id)
+                song.save()
+                try:
+                    user.songs.append(song.iid)
+                    user.save()
+                except Exception as e:
+                    print('Dem not save')
+                    print(e)
+                return jsonify({'iid' : song.iid})
+            except Exception as e:
+                print(e)
+
+                return {"message" : "Something went wrong"}, 500
 
     except Exception as e:
         print(e)
-        return Response(
-                response="Something went wrong",
-                status=500
-            )
+        return {"message" : "Something went wrong"}, 500
         if e == 'Signature has expired':
-            return Response(
-                response="Token expired",
-                status=400
-            )
+            return {"message" : 'Token expired'}, 401
     #print(request.form)"""
+
+
 
 def clean_data(item):
 
@@ -89,7 +122,6 @@ def songs():
         uploader = User.objects(iid=song.uploader)[0].to_json()
         song.uploader = json.loads(uploader)
         song.comments = list(map(clean_comments, song.comments))
-
         song = song.to_json()
         return json.loads(song)
 
@@ -344,3 +376,4 @@ def comms():
 
     print()
     return {"comments" : list(map(clean_comments, comments))}
+

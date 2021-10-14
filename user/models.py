@@ -1,57 +1,61 @@
 
-from mongoengine import Document, ListField, StringField, URLField, BooleanField, DateTimeField, ReferenceField
+import mongoengine as me
 import json, os
 from datetime import datetime
-DB_URL = 'https://sketchidb.herokuapp.com' #'http://localhost:5500'
-class User(Document):
+DB_URL = os.getenv('DB_URL') if os.getenv('DB_URL') is not None else ''
+class User(me.Document):
 
-    username = StringField(
+    username = me.StringField(
         unique = True,
         required = True,
         max_length = 20
     )
-    email = StringField(
+    email = me.StringField(
         unique = True,
         required = True,
         max_length = 50
     )
-    password = StringField(
+    password = me.StringField(
         required = True,
     )
-    first_name = StringField(
+    first_name = me.StringField(
         max_length = 50
     )
-    last_name = StringField(
+    last_name = me.StringField(
         max_length = 50
     )
-    bio = StringField(
+    bio = me.StringField(
         max_length = 100
     )
-    iid = StringField(
+    iid = me.StringField(
         unique = True,
         max_length = 7,
         required = True
     )
 
-    avatar = URLField(
-        default = DB_URL + "/sketchi/media/images/avatardummy.jpg"
+    avatar = me.URLField(
+        default = DB_URL + "/sketchi/media/images/avatardummy.png"
     )
-    followers = ListField()    
-    following = ListField()    
-    playlist = ListField()    
-    songs = ListField()   
 
-    is_verified = BooleanField(
+    facebook = me.URLField()
+    twitter = me.URLField()
+    youtube = me.URLField()
+    followers = me.ListField()    
+    following = me.ListField()    
+    playlist = me.ListField()    
+    songs = me.ListField()   
+
+    is_verified = me.BooleanField(
         default=False
         ) 
-    is_pro = BooleanField(
+    is_pro = me.BooleanField(
         default=False
         ) 
     
-    date_created = DateTimeField(
+    date_created = me.DateTimeField(
         default=datetime.utcnow()
     )
-    last_modified = DateTimeField(
+    last_modified = me.DateTimeField(
         default=datetime.utcnow()
     )
     def __str__(self):

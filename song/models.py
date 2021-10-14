@@ -2,8 +2,7 @@ from flask import Flask,jsonify
 import mongoengine as me
 from datetime import datetime
 import json, os
-
-DB_URL = 'https://sketchidb.herokuapp.com' #'http://localhost:5500'
+DB_URL = os.getenv('DB_URL') if os.getenv('DB_URL') is not None else ''
 class Response(me.EmbeddedDocument):
     by = me.StringField()  
     body = me.StringField()
@@ -50,16 +49,20 @@ class Song(me.Document):
     genre = me.StringField()
     uploader = me.StringField()
     artist = me.StringField(max_length=20)
-    description =me.StringField(max_length=100)
+    info =me.StringField(max_length=100)
     iid =  me.StringField(required=True, max_length=7)
     of_type = me.StringField(max_length=10)
     likes = me.ListField()
     shares = me.ListField()
+    collabos = me.ListField()
+    tags = me.ListField(max_length=3)
     comments = me.ListField(me.EmbeddedDocumentField(Comment))
     playlist = me.ListField()
-    year = me.StringField()
+    release_date = me.StringField()
     image = me.StringField(
-        default= DB_URL + "/sketchi/media/images/songdummy.png")
+        default= DB_URL  + "/sketchi/media/images/songdummy.png"
+        
+        )
     url= me.StringField(
         default= DB_URL + "/sketchi/media/songs/dummy")
     
