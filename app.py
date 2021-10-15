@@ -42,8 +42,8 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('ADMIN_EMAIL')
 #app.config['MAIL_ASCII_ATTACHEMENTS'] = False
 # Connect Database
 
-#engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="sketchi")
-engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
+engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="sketchi")
+#engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
 
 
 app.register_blueprint(user_router)

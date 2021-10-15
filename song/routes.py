@@ -106,6 +106,13 @@ def clean_data(item):
 def songs():
     
     tracks = Song.objects()
+    params = request.args
+    if 'genre' in params:
+        genre = (params['genre'])
+        tracks = Song.objects(genre = genre)
+        if genre == 'all':
+            tracks = Song.objects()
+
 
     def clean_replies(resp):
         by = User.objects(iid=resp.by)[0].to_json()
@@ -128,6 +135,7 @@ def songs():
     data = list(map(clean_songs, tracks))
     try:
         #print(tracks.get())
+        
         return jsonify({'songs': data}), 200
     except  Exception as e:
         print(e)

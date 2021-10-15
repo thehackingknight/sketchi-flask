@@ -4,7 +4,7 @@ from flask import Flask,jsonify, request, Response, Blueprint
 from user.models import User
 from song.models import Song
 import song.routes as song_routes
-import jwt, datetime,json,random, string
+import jwt, datetime,json,random, string, uuid
 from dotenv import load_dotenv
 import os, cloudinary,json, requests, re
 import cloudinary.uploader
@@ -14,6 +14,8 @@ from flask_mail import Mail, Message
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
+from media.models import Media
+
 router = Blueprint('user', __name__)
 bcrypt = Bcrypt()
 
@@ -448,7 +450,9 @@ def user(iid):
 @jwt_required()
 def update_user(iid):
     feature = request.args['f']
-    user = User.objects(iid=iid)[0]
+
+    email = get_jwt_identity()
+    user = User.objects(email=email).first()
 
     if feature == 'info':
         try:
@@ -462,11 +466,12 @@ def update_user(iid):
                     if key != 'username':
                         setattr(user, key, value)
                 user.save()
-                print('RETURNING')
-                return {"message" : f"Another user is using that username"}, 400
+                if user.username == username:
+                    return 'Done', 200
+                else:                
+                    return {"message" : f"Another user is using that username"}, 400
             else:
                 for key, value in info.items():
-                    print(key)
                     setattr(user, key, value)
                 user.save()
                 return jsonify({'data' : 'Info updtate'})
@@ -477,10 +482,24 @@ def update_user(iid):
     elif feature == 'avatar':
         img = request.files['file']
         if img:
-            upload_result = cloudinary.uploader.upload(img)
-            user.avatar = upload_result['url']
+            #upload_result = cloudinary.uploader.upload(img)
+            #user.avatar = upload_result['url']
+            image = Media()
+            image.name = 'sketchi_' + uuid.uuid4().hex
+            image._type = "image"
+            image._file.put(img, content_type=img.mimetype)
+            image.save()
+
+            print('Checking old image...')
+            if 'avatardummy' not in user.avatar.split('/')[-1]:
+                old_image = Media.objects(id=str(user.avatar.split('/')[-1])).first()
+                print('Done checking old image')
+                if old_image:
+                    old_image.delete()
+                    print('Old image deleted')
+            user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.id)
             user.save()
-            return jsonify(upload_result)
+            return jsonify({'url' : user.avatar})
     elif feature == 'playlist':
         song_id = request.form['song_id']
         if song_id in user.playlist:
@@ -514,6 +533,9 @@ def confirm():
 
         except Exception as e:
             print(e)
+
+            if str(e) == 'Signature verification failed':
+                return {'message' : 'Invalid Token'}, 401
             return {'message' : 'Something went wrong'}, 500
     return {'data': 'Conf'}
 
@@ -528,7 +550,29 @@ def terminate(iid):
 
             info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
             if info:
-                user = User.objects.get(email= info['user'])
+                user = User.objects.get(email= info['sub'])
+
+                image = Media.objects(pk=user.avatar.split('/')[-1]).first()
+                if image:
+                    image.delete()
+                    print('Avatar deleted')
+                
+                for song_id in user.songs:
+
+                    song = Song.objects(iid = song_id).first()
+                    if song:
+                        song_image = Media.objects(pk = song.image.split('/')[-1]).first()
+                        song_file = Media.objects(pk = song.url.split('/')[-1]).first()
+
+                        if song_image:
+                            song_image.delete()
+                            print(song.title + ' Cover deleted')
+                        if song_file:
+                            song_file.delete()
+                            print(song.title + ' File deleted')
+
+                        song.delete()
+                        print('Song deleted')
                 user.delete()
             return {'data' : 'User account deleted successfully'}
     except Exception as e:
