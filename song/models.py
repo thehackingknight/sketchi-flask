@@ -63,8 +63,7 @@ class Song(me.Document):
         default= DB_URL  + "/sketchi/media/images/songdummy.png"
         
         )
-    url= me.StringField(
-        default= DB_URL + "/sketchi/media/songs/dummy")
+    url= me.StringField()
     
     date_created = me.DateTimeField(
         default=datetime.now()
