@@ -64,9 +64,10 @@ def upload():
                     image.save()
 
                     song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
-
+                print(files)
                 if 'audio' in files:
                     aud = files["audio"]
+                    print(aud)
                     track = Media()
                     track.name = 'sketchi_' + uuid.uuid4().hex
                     track._type = "audio"
@@ -75,6 +76,7 @@ def upload():
                     track.save()
 
                     song.url = os.getenv('DB_URL') + '/media/songs/' + str(track.id)
+                
                 song.save()
                 try:
                     user.songs.append(song.iid)

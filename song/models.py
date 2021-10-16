@@ -65,6 +65,7 @@ class Song(me.Document):
         )
     url= me.StringField()
     
+    duration  = me.StringField(default='0')
     date_created = me.DateTimeField(
         default=datetime.now()
     )
