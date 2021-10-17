@@ -64,7 +64,6 @@ def upload():
                     image.save()
 
                     song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
-                print(files)
                 if 'audio' in files:
                     aud = files["audio"]
                     print(aud)
@@ -114,6 +113,9 @@ def songs():
         tracks = Song.objects(genre = genre)
         if genre == 'all':
             tracks = Song.objects()
+    if 'iid' in params:
+        iid = params['iid']
+        tracks = Song.objects(iid = iid)
 
 
     def clean_replies(resp):
@@ -146,7 +148,7 @@ def songs():
 
 
 @router.route('/song/<iid>', methods=['GET'])
-def song(iid):
+def song_by_iid(iid):
     try:
         track = Song.objects(iid=iid)
         if track:
@@ -181,24 +183,48 @@ def media(folder, filename):
 
 
 @router.route('/song/<iid>/update', methods=['POST'])
+@jwt_required()
 def update_song(iid):
     feature = request.args['f']
-    song = Song.objects(iid=iid)[0]
-    print()
+    song = Song.objects(iid=iid).first()
+    email = get_jwt_identity()
+    files = request.files
+    form = request.form
+    user = User.objects(email=email).first()
     if feature == 'info':
 
         
-        for key, value in request.form.items():
+        for key, value in form.items():
 
-            setattr(song, key, value)
+            if key != 'collabos' and key != 'tags':
+                setattr(song, key, value)
+                song.collabos = json.loads(form['collabos'])
+                song.tags = json.loads(form['tags'])
+
             if key == 'comments':
                 comments = json.loads(value)
                 song.comments = comments
+
+        if 'image' in files:
+            #Delete prev image
+            image = Media.objects(pk=song.image.split('/')[-1]).first()
+            if image:
+                image.delete()
+                print('Song Prev Image deleted')
+            img = files["image"]
+            image = Media()
+            image.name = 'sketchi_' + uuid.uuid4().hex
+            image._type = "image"
+            image._file.put(img, content_type=img.mimetype)
+            image.save()
+            song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
         song.save()
 
 
-    print()
-    return {'data': 'Song updated'}
+
+
+    #song = song_by_iid(iid).json
+    return 'song'
 
 
 @router.route('/song/<iid>/like', methods=['POST'])
