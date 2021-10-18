@@ -110,6 +110,7 @@ def clean_data(item):
 def songs():
     
     args = request.args
+    tracks = Song.objects()
     if 'ids' in args:
         try:
             print(type(args['ids']))
