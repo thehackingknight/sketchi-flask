@@ -7,15 +7,16 @@ router = Blueprint("media", __name__)
 
 @router.route("/media/<mtype>/<oid>")
 def media(mtype, oid):
-
-    _file = Media.objects(pk=oid).first()
-    if _file:
-        return send_file(
-            _file._file, attachment_filename=_file.name, as_attachment=True
-        )
+    print(request.remote_addr)
+    if True:
+        _file = Media.objects(pk=oid).first()
+        if _file:
+            return _file._file.read()
+        else:
+            return "<h1>404</h1>", 404
+        return "Hey"
     else:
-        return "<h1>404</h1>", 404
-    return "Hey"
+        return 'file'
 
 
 @router.route("/test", methods=["GET", "POST"])

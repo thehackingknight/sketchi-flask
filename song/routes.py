@@ -49,12 +49,16 @@ def upload():
                 for key, value in form.items():
                     if key != 'collabos' and key != 'tags':
                         setattr(song, key, value)
-                song.collabos = json.loads(form['collabos'])
-                song.tags = json.loads(form['tags'])
+                if 'collabos' in form:
+                    song.collabos = json.loads(form['collabos'])
+                
+                if 'tags' in form:
+                    song.tags = json.loads(form['tags'])
 
                 song.iid = gen_id(7, 'songs')
                 song.uploader = user.iid
                 
+                print(files)
                 if 'image' in files:
                     img = files["image"]
                     image = Media()
@@ -66,12 +70,11 @@ def upload():
                     song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
                 if 'audio' in files:
                     aud = files["audio"]
-                    print(aud)
                     track = Media()
                     track.name = 'sketchi_' + uuid.uuid4().hex
                     track._type = "audio"
-
-                    track._file.put(aud, content_type=aud.mimetype)
+                    track._file.put(aud)
+                    #track._file.put(aud, content_type=aud.mimetype)
                     track.save()
 
                     song.url = os.getenv('DB_URL') + '/media/songs/' + str(track.id)
@@ -106,7 +109,21 @@ def clean_data(item):
 @router.route('/songs', methods=['GET', 'POST'])
 def songs():
     
-    tracks = Song.objects()
+    args = request.args
+    if 'ids' in args:
+        try:
+            print(type(args['ids']))
+            ids = json.loads(args['ids'])
+            tracks = Song.objects(iid__nin=ids)[0 : 10]
+        except Exception as e:
+            print(e)
+            return 'Something went wrong', 500
+        
+
+    #else:
+    #return {'message': 'Please provide list of IDS'}, 400
+
+
     params = request.args
     if 'genre' in params:
         genre = (params['genre'])
