@@ -291,8 +291,8 @@ def login():
         verify_jwt_in_request()
         token = request.headers['Authorization'].split(' ')[1]
         if token:
-            data = get_jwt_identity()
-            user = User.objects(email = data)
+            email = validate(request)['sub']
+            user = User.objects(email = email)
             if user:
                 user = user[0]
                 
@@ -337,7 +337,7 @@ def user(iid):
 
             if feature == 'playlist':
                 verify_jwt_in_request()
-                email = get_jwt_identity()
+                email = validate(request)['sub']
                 if email:
                     user = User.objects(email=email).first()
                     songs = []
@@ -390,7 +390,7 @@ def user(iid):
 
             if feature == 'playlist':
                 verify_jwt_in_request()
-                email = get_jwt_identity()
+                email = email = validate(request)['sub']
 
                 if email:
                     user = User.objects(email=email).first()
@@ -446,71 +446,81 @@ def user(iid):
             print(e)
             return {"message" : 'Something went wrong!'}, 500
 
+def validate(request):
+    token = request.headers['Authorization'].split(' ')[1]
+    info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+    return info
+
 @router.route('/user/<iid>/update', methods=['GET', 'POST'])
 @jwt_required()
 def update_user(iid):
     feature = request.args['f']
 
-    email = get_jwt_identity()
-    user = User.objects(email=email).first()
+    
+    email = validate(request)['sub']
+    if email:
+        user = User.objects(email=email).first()
 
-    if feature == 'info':
-        try:
-            info = request.form
-            username = info['username']
-            existing_username = User.objects(username=username)
-            if existing_username:
+        if feature == 'info':
+            try:
+                info = request.form
+                username = info['username']
+                existing_username = User.objects(username=username)
+                if existing_username:
 
-                # Save rest of data
-                for key, value in info.items():
-                    if key != 'username':
+                    # Save rest of data
+                    for key, value in info.items():
+                        if key != 'username':
+                            setattr(user, key, value)
+                    user.save()
+                    if user.username == username:
+                        return 'Done', 200
+                    else:                
+                        return {"message" : f"Another user is using that username"}, 400
+                else:
+                    for key, value in info.items():
                         setattr(user, key, value)
+                    user.save()
+                    return jsonify({'data' : 'Info updtate'})
+
+            except Exception as e:
+                print(e)
+                return {'message' : 'Something went wrong'}, 500
+        elif feature == 'avatar':
+            img = request.files['file']
+            if img:
+                #upload_result = cloudinary.uploader.upload(img)
+                #user.avatar = upload_result['url']
+                image = Media()
+                image.name = 'sketchi_' + uuid.uuid4().hex
+                image._type = "image"
+                image._file.put(img, content_type=img.mimetype)
+                image.save()
+
+                print('Checking old image...')
+                if 'avatardummy' not in user.avatar.split('/')[-1]:
+                    old_image = Media.objects(id=str(user.avatar.split('/')[-1])).first()
+                    print('Done checking old image')
+                    if old_image:
+                        old_image.delete()
+                        print('Old image deleted')
+                user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.id)
                 user.save()
-                if user.username == username:
-                    return 'Done', 200
-                else:                
-                    return {"message" : f"Another user is using that username"}, 400
+                return jsonify({'url' : user.avatar})
+        elif feature == 'playlist':
+            song_id = request.form['song_id']
+            if song_id in user.playlist:
+                user.playlist.remove(song_id)
+
             else:
-                for key, value in info.items():
-                    setattr(user, key, value)
-                user.save()
-                return jsonify({'data' : 'Info updtate'})
+                user.playlist.append(song_id)
 
-        except Exception as e:
-            print(e)
-            return {'message' : 'Something went wrong'}, 500
-    elif feature == 'avatar':
-        img = request.files['file']
-        if img:
-            #upload_result = cloudinary.uploader.upload(img)
-            #user.avatar = upload_result['url']
-            image = Media()
-            image.name = 'sketchi_' + uuid.uuid4().hex
-            image._type = "image"
-            image._file.put(img, content_type=img.mimetype)
-            image.save()
-
-            print('Checking old image...')
-            if 'avatardummy' not in user.avatar.split('/')[-1]:
-                old_image = Media.objects(id=str(user.avatar.split('/')[-1])).first()
-                print('Done checking old image')
-                if old_image:
-                    old_image.delete()
-                    print('Old image deleted')
-            user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.id)
             user.save()
-            return jsonify({'url' : user.avatar})
-    elif feature == 'playlist':
-        song_id = request.form['song_id']
-        if song_id in user.playlist:
-            user.playlist.remove(song_id)
-
-        else:
-            user.playlist.append(song_id)
-
-        user.save()
-        print( list(user.playlist))
-        return {'playlist' : user.playlist}
+            print( list(user.playlist))
+            return {'playlist' : user.playlist}
+    else:
+        print('Invalid Token')
+        return {'message' : 'Invalid token'}, 401
 
 @router.route('/auth/confirm', methods=['POST'])
 def confirm():
@@ -584,7 +594,7 @@ def terminate(iid):
 def confirm_pass(iid):
 
     try:
-        email = get_jwt_identity()
+        email = email = validate(request)['sub']
         password = request.form['password']
         if email:
             user = User.objects(email=email).first()

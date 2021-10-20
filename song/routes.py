@@ -2,6 +2,7 @@ from flask import Blueprint,jsonify, request, Response, send_file
 from flask_bcrypt import Bcrypt
 from .models import Song, Comment, Response
 from user.models import User
+from notifications.models import Notifications
 import jwt, datetime,json,random, string, os
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
@@ -11,9 +12,14 @@ import time
 import uuid
 from media.models import Media
 from io import BytesIO
+
 router = Blueprint('song', __name__)
 bcrypt = Bcrypt()
-
+def validate(request):
+    token = request.headers['Authorization'].split(' ')[1]
+    info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+    return info
+    
 def gen_id(N, w):
 
   
@@ -30,16 +36,19 @@ def gen_id(N, w):
         with open(ids_path, 'w') as f:
             json.dump(obj,f) 
         return ran_id
-
 @router.route('/song/upload', methods=['POST'])
 @jwt_required()
 def upload():
 
     try:
 
-        email = get_jwt_identity()
+        email = validate(request)['sub']
         files = request.files
-        user = User.objects(email=email).first()
+        if email:
+            user = User.objects(email=email).first()
+        else:
+            return {'Invalid token'}, 401
+
         if user:
             print(user)
             try:
@@ -111,6 +120,7 @@ def songs():
     
     args = request.args
     tracks = Song.objects()
+    print()
     if 'ids' in args:
         try:
             print(type(args['ids']))
@@ -168,9 +178,9 @@ def songs():
 @router.route('/song/<iid>', methods=['GET'])
 def song_by_iid(iid):
     try:
-        track = Song.objects(iid=iid)
+        track = Song.objects(iid=iid).first()
         if track:
-            track = track[0]._data
+            track = track._data
             del track['id']
             """
             uploader = User.objects(iid = track['uploader_id'])[0]
@@ -205,10 +215,16 @@ def media(folder, filename):
 def update_song(iid):
     feature = request.args['f']
     song = Song.objects(iid=iid).first()
-    email = get_jwt_identity()
+    email = validate(request)['sub']
+    
     files = request.files
     form = request.form
-    user = User.objects(email=email).first()
+    if email:
+        
+        user = User.objects(email=email).first()
+    else:
+        return {'message' : 'Invalid token'}, 401
+
     if feature == 'info':
 
         
@@ -247,19 +263,21 @@ def update_song(iid):
 
 @router.route('/song/<iid>/like', methods=['POST'])
 @jwt_required()
-def likes(iid):
+def like(iid):
 
     try:
 
-        email = get_jwt_identity()
+        email = validate(request)['sub']
         action = request.args['act']
         if email:
-            user = User.objects(email=email)[0]
-            song = Song.objects(iid=iid)[0]
+            user = User.objects(email=email).first()
+            song = Song.objects(iid=iid).first()
 
             if action == 'like':
                 if user.iid not in song.likes:
                     song.likes.append(user.iid)
+                    
+
                     song.save()
                     return {'data': 'Song liked'}, 200
 
@@ -282,8 +300,12 @@ def likes(iid):
 @jwt_required()
 def delete_song(iid):
     try:
-        email = get_jwt_identity()
-        user = User.objects(email=email).first()
+        email = validate(request)['sub']
+        if email:
+            user = User.objects(email=email).first()
+        else:
+
+            return {'message' : 'Invalid token'}, 401
         if user:
             song = Song.objects(iid=iid).first()
 
@@ -308,10 +330,14 @@ def comments(iid):
 
     try:
         action = request.args['action']
-        user = get_jwt_identity()
+        email = validate(request)['sub']
+        if email:
+            user = User.objects(email=email).first()
+        else:
+            return {'message' : 'Not authenticated'}, 401
         info = request.form
         if user:
-            user = User.objects(email=user)[0]
+            
             if action == 'reply':
 
                 comment_id = request.args.get('comment_id')
@@ -350,8 +376,8 @@ def comments(iid):
                     if comment:
                         comment = comment[0]
                         response = Response()
-                        response.body = info['body']
                         response.iid = gen_id(7, 'responses')
+                        response.body = info['body']
                         response.by = user.iid
                         response.secs_since_epoch = int(time.time())
                         response.date_created = datetime.now()
@@ -376,12 +402,10 @@ def comments(iid):
                     return {'message' : 'No such song with specified iid.'}, 404
 
             elif action == 'add':
-
-
-                
+ 
                 comment = Comment()
-                comment.body = info['body']
                 comment.iid = gen_id(7, 'comments')
+                comment.body = info['body']
                 comment.secs_since_epoch = int(time.time())
                 comment.date_created = datetime.now()
 
@@ -401,7 +425,6 @@ def comments(iid):
                 comment.commenter = commenter
                 data = comment.to_json()
 
-                print(data)
                 return {'data': json.loads(data)}
 
 

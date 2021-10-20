@@ -1,34 +1,35 @@
 from flask import Flask,jsonify
-import mongoengine as me
+from mongoengine import *
 from datetime import datetime
 import json, os
+from bson.objectid import ObjectId
 DB_URL = os.getenv('DB_URL') if os.getenv('DB_URL') is not None else ''
-class Response(me.EmbeddedDocument):
-    by = me.StringField()  
-    body = me.StringField()
-    iid = me.StringField()
-    likes = me.ListField()
-    secs_since_epoch = me.IntField()
-    last_modified = me.DateTimeField(
+class Response(EmbeddedDocument):
+
+    by = StringField()  
+    body = StringField()
+    iid = StringField()
+    likes = ListField()
+    secs_since_epoch = IntField()
+    last_modified = DateTimeField(
         
     )
     def __str__(self):
         return self.body
 
-class Comment(me.EmbeddedDocument):
+class Comment(EmbeddedDocument):
+    commenter = StringField()
+    song = StringField()
 
-    commenter = me.StringField()
-    song = me.StringField()
+    body = StringField()
+    iid = StringField()
 
-    body = me.StringField()
-    iid = me.StringField()
-
-    replies = me.ListField(me.EmbeddedDocumentField(Response))
-    likes = me.ListField()
-    date_created = me.DateTimeField(
+    replies = ListField(EmbeddedDocumentField(Response))
+    likes = ListField()
+    date_created = DateTimeField(
     )
-    secs_since_epoch = me.IntField()
-    last_modified = me.DateTimeField(
+    secs_since_epoch = IntField()
+    last_modified = DateTimeField(
         
     )
 
@@ -43,33 +44,33 @@ class Comment(me.EmbeddedDocument):
             "likes" : self.likes,
             }
 
-class Song(me.Document):
+class Song(Document):
     
-    title = me.StringField(required=True)
-    genre = me.StringField()
-    uploader = me.StringField()
-    artist = me.StringField(max_length=20)
-    info =me.StringField(max_length=100)
-    iid =  me.StringField(required=True, max_length=7)
-    of_type = me.StringField(max_length=10)
-    likes = me.ListField()
-    shares = me.ListField()
-    collabos = me.ListField()
-    tags = me.ListField(max_length=3)
-    comments = me.ListField(me.EmbeddedDocumentField(Comment))
-    playlist = me.ListField()
-    release_date = me.StringField()
-    image = me.StringField(
+    title = StringField(required=True)
+    genre = StringField()
+    uploader = StringField()
+    artist = StringField(max_length=20)
+    info =StringField(max_length=100)
+    iid =  StringField(required=True, max_length=7)
+    of_type = StringField(max_length=10)
+    likes = ListField()
+    shares = ListField()
+    collabos = ListField()
+    tags = ListField(max_length=3)
+    comments = ListField(EmbeddedDocumentField(Comment))
+    playlist = ListField()
+    release_date = StringField()
+    image = StringField(
         default= DB_URL  + "/sketchi/media/images/songdummy.png"
         
         )
-    url= me.StringField()
+    url= StringField()
     
-    duration  = me.StringField(default='0')
-    date_created = me.DateTimeField(
+    duration  = StringField(default='0')
+    date_created = DateTimeField(
         default=datetime.now()
     )
-    last_modified = me.DateTimeField(
+    last_modified = DateTimeField(
         default=datetime.now(),
         
     )

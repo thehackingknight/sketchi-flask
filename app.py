@@ -21,6 +21,7 @@ from user.routes import router as user_router
 from song.routes import router as song_router
 from api.routes import router as api_router
 from media.routes import router as media_router
+from notifications.routes import router as notifications_router
 
 
 
@@ -42,15 +43,18 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('ADMIN_EMAIL')
 #app.config['MAIL_ASCII_ATTACHEMENTS'] = False
 # Connect Database
 
-#engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="sketchi")
+if os.environ['ENV'] == 'prod':
+    engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
+else:
+    engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="sketchi")
 
-engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
 
 
 app.register_blueprint(user_router)
 app.register_blueprint(song_router)
 app.register_blueprint(api_router)
 app.register_blueprint(media_router)
+app.register_blueprint(notifications_router)
 
 
 bcrypt = Bcrypt(app)
