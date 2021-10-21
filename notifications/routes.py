@@ -72,25 +72,47 @@ def create():
         params = request.args
         action = params['action']
         target = params['target']
-        target_id = params['target_id']
+        if 'target_id' in params:
+            target_id = params['target_id']
 
         notif = Notifications()
         if action == 'like':
-
+            
             if target == 'song':
 
                 song = Song.objects(iid=target_id).first()
                 html = f"""liked your song <span class="a fw-5">{song.title}.</span>
                 """
+        if action == 'comment':
+            target_element = params['target_element']
+            song = Song.objects(iid=target_id).first()
+            
+            html = f"""commented on your song <span class="a fw-5">{song.title}.</span>
+                """
+            notif.target_element = target_element
         
-            notif.text = html
-            notif._from = user.iid
-            notif.target = song.iid
-            notif.action = 'like'
-            notif.to.append(song.uploader)
-            notif.secs_since_epoch= int(time.time())
-            notif.date_created = datetime.now()
-            notif.save()
+        if action == 'reply':
+            song = Song.objects(iid=target_id).first()
+            
+            target_element = params['target_element']
+            
+            notif.target_element = target_element
+            uploader = User.objects(iid = song.uploader).first()
+            html = f"""replied to your comment on <span class="a fw-5">{uploader.username}</span>'s song."""
+        
+        if action == 'follow':
+            notif.target = params['target']
+            html = f"""has started following you."""
+
+        audience = json.loads(params['to'])
+        notif.to = audience
+        notif.target = params['target_id']
+        notif._type = action
+        notif.text = html
+        notif._from = user.iid
+        notif.secs_since_epoch= int(time.time())
+        notif.date_created = datetime.now()
+        notif.save()
         return notif_by_id(str(notif.id))
     except Exception as e:
         print(e)

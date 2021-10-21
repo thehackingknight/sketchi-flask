@@ -7,6 +7,7 @@ class Notifications(Document):
     _from = StringField(required=True)
     target = StringField(required=True)
     text = StringField()
-    action = StringField(required=True)
+    target_element = StringField()
+    _type = StringField(required=True)
     secs_since_epoch = IntField()
     date_created = DateTimeField(required=True)

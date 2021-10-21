@@ -61,7 +61,7 @@ def sendmail():
 def get_songs(uploader_id):
     
     data = []
-    songs = Song.objects(uploader_id=uploader_id)
+    songs = Song.objects(uploader=uploader_id)
     for song in songs:
         song = song._data
         song['id'] = str(song['id'])
@@ -292,6 +292,7 @@ def login():
         token = request.headers['Authorization'].split(' ')[1]
         if token:
             email = validate(request)['sub']
+            print(email)
             user = User.objects(email = email)
             if user:
                 user = user[0]
@@ -454,16 +455,35 @@ def validate(request):
 @router.route('/user/<iid>/update', methods=['GET', 'POST'])
 @jwt_required()
 def update_user(iid):
-    feature = request.args['f']
+
+    params = request.args
+    feature = params['f']
 
     
     email = validate(request)['sub']
+    info = request.form
     if email:
         user = User.objects(email=email).first()
+        if feature == 'followers':
+            artist = User.objects(iid=iid).first()
+            if params['action'] == 'follow':
+                artist.followers.append(user.iid)
+                artist.save()
 
+                user.following.append(artist.iid)
+                user.save()
+                
+                return {'followers' : artist.followers}
+            else:
+                artist.followers.remove(user.iid)
+                user.following.remove(artist.iid)
+
+                artist.save()
+                user.save()
+                return {'followers' : artist.followers}
         if feature == 'info':
             try:
-                info = request.form
+                
                 username = info['username']
                 existing_username = User.objects(username=username)
                 if existing_username:
@@ -486,7 +506,7 @@ def update_user(iid):
             except Exception as e:
                 print(e)
                 return {'message' : 'Something went wrong'}, 500
-        elif feature == 'avatar':
+        if feature == 'avatar':
             img = request.files['file']
             if img:
                 #upload_result = cloudinary.uploader.upload(img)
@@ -507,7 +527,7 @@ def update_user(iid):
                 user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.id)
                 user.save()
                 return jsonify({'url' : user.avatar})
-        elif feature == 'playlist':
+        if feature == 'playlist':
             song_id = request.form['song_id']
             if song_id in user.playlist:
                 user.playlist.remove(song_id)
