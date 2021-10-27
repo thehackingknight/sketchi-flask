@@ -204,75 +204,80 @@ def signup():
             subject= "Sketchi validation email",
              message = f"""
              <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style type="text/css">
-
-
-            .sketchi{{
-                font-family: Poppins, Roboto,Helvetica Neue,sans-serif !important;
-                text-align: center;width: 80%;
-                margin: auto;
-                padding: 10px;
-                color: black;
-               
-            }}
-
-            .sketchi *, .sketchi{{-ms-overflow-style: none;scrollbar-width: none;
-            }}
-
-            .sketchi::-webkit-scrollbar{{ display: none;}}
-               
-              
-
-            .btn {{
-                display: inline-block;
-                font-weight: 400;
-                line-height: 1.5;
-                color: #212529 !important;
-                text-align: center !important;
-                text-decoration: none;
-                vertical-align: middle;
-                cursor: pointer;
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                user-select: none;
-                background-color: transparent;
-                border: 1px solid transparent;
-                padding: .375rem .75rem;
-                font-size: 1rem;
-                border-radius: .25rem;
-                transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-            }}
-            .btn-primary {{
-                color: #fff;
-                background-color: #0d6efd;
-                border-color: #0d6efd;
-                
-            }}
-    </style>
-</head>
-<body>
-
-    <div class="sketchi">
-
-    <h1>Thank you for signing up to Sketchi!</h1>
-
-    <p>Click the button to verify your account.</p>
-    <a href="{url}" target="_blank" class="btn btn-primary">Verify</a>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style type="text/css">
     
-    <p>If button did not work use this link.</p>
-    <a href="{url}" target="_blank">{url}</a>
-
-    <h3>The verification is valid for only 48hrs</h3>
-
-    <p>For support please contact us at <a href="mailto:clickbait4587@gmail.com">clickbait4587@gmail.com</a></p>
-    </div>
     
-</body>
-</html>
+                .sketchi{{
+                    font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
+                    margin: auto;
+                    padding: 10px;
+                    color: black;
+                   
+                }}
+    
+    
+                   
+                  
+    
+                .btn {{
+                    cursor: pointer;
+                    display: inline-block;
+                    min-height: 1em;
+                    outline: 0;
+                    border: none;
+                    vertical-align: baseline;
+                    background: #e0e1e2 none;
+                    color: rgba(0,0,0,.6);
+                    font-family: Lato,"Helvetica Neue",Arial,Helvetica,sans-serif;
+                    margin: 0 .25em 0 0;
+                    padding: .78571429em 1.5em;
+                    text-transform: none;
+                    text-shadow: none;
+                    font-weight: 600;
+                    line-height: 1em;
+                    font-style: normal;
+                    text-align: center;
+                    text-decoration: none;
+                    border-radius: .28571429rem;
+                    box-shadow: inset 0 0 0 1px transparent,inset 0 0 0 0 rgba(34,36,38,.15);
+                    -webkit-user-select: none;
+                    -ms-user-select: none;
+                    user-select: none;
+                    transition: opacity .1s ease,background-color .1s ease,color .1s ease,box-shadow .1s ease,background .1s ease;
+                    will-change: "";
+                    -webkit-tap-highlight-color: transparent;
+                }}
+                .btn-primary {{
+                    color: #fff !important;
+                    background-color: #0d6efd !important;
+                    border-color: #0d6efd !important;
+                    
+                }}
+        </style>
+    </head>
+    <body>
+    
+        <div class="sketchi">
+    
+        <h1>Thank you for signing up to Sketchi!</h1>
+    
+        <p>To finish up, Click the button to verify your account.</p>
+        <a href="{url}" target="_blank" class="btn btn-primary">Verify</a>
+        
+        <p>If button did not work use this link:</p>
+        <a href="{url}" target="_blank">{url}</a>
+    
+        <h3>The verification is valid for only 48hrs</h3>
+    
+        <p>For support please contact us at <a href="mailto:clickbait4587@gmail.com">clickbait4587@gmail.com</a></p>
+        </div>
+        
+    </body>
+    </html>
              """ ,
               recipients=[email],
                res={"token": token, 'user' : user})
@@ -519,9 +524,11 @@ def update_user(iid):
                 image.save()
 
                 print('Checking old image...')
-                if 'avatardummy' not in user.avatar.split('/')[-1]:
+                old_image = None
+                try:
                     old_image = Media.objects(id=str(user.avatar.split('/')[-1])).first()
-                    print('Done checking old image')
+                except Exception as e:
+                    pass
                     if old_image:
                         old_image.delete()
                         print('Old image deleted')
@@ -591,12 +598,10 @@ def forgot():
 
 
             .sketchi{{
-                font-family: Poppins, Roboto,Helvetica Neue,sans-serif !important;
-                width: 80%;
+                     font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
                 margin: auto;
                 padding: 10px;
-                height: 80%;
-                overflow: scroll;}}
+        }}
 
             .sketchi *, .sketchi{{
                 -ms-overflow-style: none; /* IE and Edge */
@@ -636,7 +641,7 @@ def forgot():
             }}
             .red{{
                 background-color: #db2828;
-                color: #fff;
+                color: #fff !important;
                 text-shadow: none;
                 background-image: none;
             }}
@@ -708,7 +713,11 @@ def terminate(iid):
             if info:
                 user = User.objects.get(email= info['sub'])
 
-                image = Media.objects(pk=user.avatar.split('/')[-1]).first()
+                image = None
+                try:
+                    image = Media.objects(pk=user.avatar.split('/')[-1]).first()
+                except Exception as e:
+                    pass
                 if image:
                     image.delete()
                     print('Avatar deleted')
@@ -717,9 +726,13 @@ def terminate(iid):
 
                     song = Song.objects(iid = song_id).first()
                     if song:
-                        song_image = Media.objects(pk = song.image.split('/')[-1]).first()
-                        song_file = Media.objects(pk = song.url.split('/')[-1]).first()
-
+                        song_image = None
+                        song_file = None
+                        try:
+                            song_image = Media.objects(pk = song.image.split('/')[-1]).first()
+                            song_file = Media.objects(pk = song.url.split('/')[-1]).first()
+                        except Exception as e:
+                            pass
                         if song_image:
                             song_image.delete()
                             print(song.title + ' Cover deleted')
@@ -760,3 +773,12 @@ def confirm_pass(iid):
     except Exception as e:
         print(e)
         return 'Something went wrong', 500
+
+@router.route('/delpic/<oid>', methods=['POST'])
+def delpic(oid):
+    print(oid)
+    try:
+        img = Media.objects(pk=oid)
+    except Exception as e:
+        print(e)
+    return 'working'
