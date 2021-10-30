@@ -7,7 +7,6 @@ router = Blueprint("media", __name__)
 
 @router.route("/media/<mtype>/<oid>")
 def media(mtype, oid):
-    print(request.remote_addr)
     if True:
         _file = Media.objects(pk=oid).first()
         if _file:
