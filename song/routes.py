@@ -173,6 +173,48 @@ def songs():
         print(e)
         return 'Exception' 
 
+@router.route('/songs/suggested', methods=['GET', 'POST'])
+def suggested_songs():
+    
+    tracks = Song.objects()
+    params = request.args
+    if 'genre' in params:
+        genre = (params['genre'])
+        tracks = Song.objects(genre = genre)
+        if genre == 'all':
+            tracks = Song.objects()
+    if 'iid' in params:
+        iid = params['iid']
+        tracks = Song.objects(iid = iid)
+
+
+    def clean_replies(resp):
+        by = User.objects(iid=resp.by)[0].to_json()
+        resp.by = json.loads(by)
+        return json.loads(resp.to_json())
+
+    def clean_comments(comment):
+        commenter = User.objects(iid=comment.commenter)[0].to_json()
+        comment.commenter = json.loads(commenter)
+        comment.replies = list(map(clean_replies, comment.replies))
+        return json.loads(comment.to_json())
+
+    def clean_songs(song):
+        uploader = User.objects(iid=song.uploader)[0].to_json()
+        song.uploader = json.loads(uploader)
+        song.comments = list(map(clean_comments, song.comments))
+        song = song.to_json()
+        return json.loads(song)
+
+    data = list(map(clean_songs, tracks))
+    try:
+        #print(tracks.get())
+        
+        return jsonify({'songs': data}), 200
+    except  Exception as e:
+        print(e)
+        return 'Exception' 
+
 
 
 @router.route('/song/<iid>', methods=['GET'])
@@ -241,7 +283,11 @@ def update_song(iid):
 
         if 'image' in files:
             #Delete prev image
-            image = Media.objects(pk=song.image.split('/')[-1]).first()
+            image = None
+            try:
+                image = Media.objects(pk=song.image.split('/')[-1]).first()
+            except Exception as e:
+                pass
             if image:
                 image.delete()
                 print('Song Prev Image deleted')
