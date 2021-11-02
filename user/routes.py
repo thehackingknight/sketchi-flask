@@ -152,15 +152,16 @@ def users():
 def signup():
 
     method = request.args['method']
-    iid = gen_id(7)
+    
     username = request.form.get('username')
     
     email = request.form.get('email')
     password = request.form.get('password')
 
     existing_email = User.objects(email=email)
-
+    
     if method == 'google':
+        iid = gen_id(7)
         username = iid
         password = gen_pass()
 
@@ -176,7 +177,7 @@ def signup():
                 songs = get_songs(user)
                 return {'user': user, 'token': token}
     
-    
+    iid = gen_id(7)
     hashed_pass = bcrypt.generate_password_hash(password)
     existing_username = User.objects(username=username)
     if existing_username:
@@ -193,11 +194,8 @@ def signup():
     user.username = username
     try:   
                
-        token = gen_token(email, 48)
-        user.save()
-        user = user._data
-        user['id'] = str(user['id'])
-        del user['password']
+        token = gen_token({'email' : email, 'username' : username, 'iid' : iid, 'password' : user.password}, 48)
+  
         url = f'{os.getenv("CLIENT_URL")}/auth/confirm?token={token}'
         
         return send_email(
@@ -280,7 +278,7 @@ def signup():
     </html>
              """ ,
               recipients=[email],
-               res={"token": token, 'user' : user})
+               res='DONE')
         
     except Exception as e:
         print(e)
@@ -312,8 +310,9 @@ def login():
 
     email = request.form.get('email')
     password = request.form.get('password')
-    user = User.objects(email = email)
-    
+    user = User.objects(email=email)
+
+
     if user:
 
         user = user[0]
@@ -336,7 +335,6 @@ def login():
 def user(iid):
 
     user = User.objects(iid = iid).first()
-    print(iid)
     if request.method == 'GET':
 
         if user:
@@ -350,7 +348,8 @@ def user(iid):
                     songs = []
                     for song_id in user.playlist:
                         song = Song.objects(iid=song_id).first()
-                        songs.append(song)
+                        if song:
+                            songs.append(song)
                     def clean_replies(resp):
                         by = User.objects(iid=resp.by)[0].to_json()
                         resp.by = json.loads(by)
@@ -361,12 +360,14 @@ def user(iid):
                         comment.replies = list(map(clean_replies, comment.replies))
                         return json.loads(comment.to_json())
                     def clean_songs(song):
-                        uploader = User.objects(iid=song.uploader)[0].to_json()
-                        song.uploader = json.loads(uploader)
-                        song.comments = list(map(clean_comments, song.comments))
-                        song = song.to_json()
-                        return json.loads(song)
+                        if song:
+                            uploader = User.objects(iid=song.uploader).first().to_json()
+                            song.uploader = json.loads(uploader)
+                            song.comments = list(map(clean_comments, song.comments))
+                            song = song.to_json()
+                            return json.loads(song)
                     data = list(map(clean_songs, songs))
+                    print(data)
                     try:
                         #print(tracks.get())
                         return jsonify({'songs': data}), 200
@@ -558,16 +559,22 @@ def confirm():
     if token:
         try:
             info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
-            user = User.objects(email=info['sub']).first()
+            email = info['sub']['email']
+            if User.objects(email = email):
+                return {'token' : gen_token(email)}, 302
+            else:
+                user = User()
+                for key, val in info['sub'].items():
+                    setattr(user, key, val)
 
-            if user:
-                user.is_verified = True
-                user.save()
+                if True:
+                    user.is_verified = True
+                    user.save()
 
-                user = user._data
-                del user['password']
-                user['id'] = str(user['id'])
-                return {'user' : user, 'token' : token}
+                    user = user._data
+                    del user['password']
+                    user['id'] = str(user['id'])
+                    return {'user' : user, 'token' : gen_token(user['email'])}
 
         except Exception as e:
             print(e)
