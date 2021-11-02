@@ -50,56 +50,59 @@ def upload():
             return {'Invalid token'}, 401
 
         if user:
-            print(user)
-            try:
-                
-                song = Song()
-                form = request.form
-                for key, value in form.items():
-                    if key != 'collabos' and key != 'tags':
-                        setattr(song, key, value)
-                if 'collabos' in form:
-                    song.collabos = json.loads(form['collabos'])
-                
-                if 'tags' in form:
-                    song.tags = json.loads(form['tags'])
 
-                song.iid = gen_id(7, 'songs')
-                song.uploader = user.iid
-                
-                print(files)
-                if 'image' in files:
-                    img = files["image"]
-                    image = Media()
-                    image.name = 'sketchi_' + uuid.uuid4().hex
-                    image._type = "image"
-                    image._file.put(img, content_type=img.mimetype)
-                    image.save()
-
-                    song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
-                if 'audio' in files:
-                    aud = files["audio"]
-                    track = Media()
-                    track.name = 'sketchi_' + uuid.uuid4().hex
-                    track._type = "audio"
-                    track._file.put(aud)
-                    #track._file.put(aud, content_type=aud.mimetype)
-                    track.save()
-
-                    song.url = os.getenv('DB_URL') + '/media/songs/' + str(track.id)
-                
-                song.save()
+            if not user.is_pro and user.songs.lenght >= 3:
+                return {'message' : 'Max number of uploads reached. Upgrade to pro to upload more!'}, 400
+            
+            else:
                 try:
-                    user.songs.append(song.iid)
-                    user.save()
-                except Exception as e:
-                    print('Dem not save')
-                    print(e)
-                return jsonify({'iid' : song.iid})
-            except Exception as e:
-                print(e)
 
-                return {"message" : "Something went wrong"}, 500
+                    song = Song()
+                    form = request.form
+                    for key, value in form.items():
+                        if key != 'collabos' and key != 'tags':
+                            setattr(song, key, value)
+                    if 'collabos' in form:
+                        song.collabos = json.loads(form['collabos'])
+
+                    if 'tags' in form:
+                        song.tags = json.loads(form['tags'])
+
+                    song.iid = gen_id(7, 'songs')
+                    song.uploader = user.iid
+
+                    if 'image' in files:
+                        img = files["image"]
+                        image = Media()
+                        image.name = 'sketchi_' + uuid.uuid4().hex
+                        image._type = "image"
+                        image._file.put(img, content_type=img.mimetype)
+                        image.save()
+
+                        song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
+                    if 'audio' in files:
+                        aud = files["audio"]
+                        track = Media()
+                        track.name = 'sketchi_' + uuid.uuid4().hex
+                        track._type = "audio"
+                        track._file.put(aud)
+                        #track._file.put(aud, content_type=aud.mimetype)
+                        track.save()
+
+                        song.url = os.getenv('DB_URL') + '/media/songs/' + str(track.id)
+
+                    song.save()
+                    try:
+                        user.songs.append(song.iid)
+                        user.save()
+                    except Exception as e:
+                        print('Dem not save')
+                        print(e)
+                    return jsonify({'iid' : song.iid})
+                except Exception as e:
+                    print(e)
+
+                    return {"message" : "Something went wrong"}, 500
 
     except Exception as e:
         print(e)

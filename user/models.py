@@ -27,6 +27,8 @@ class User(me.Document):
     bio = me.StringField(
         max_length = 100
     )
+
+    address = me.StringField()
     iid = me.StringField(
         unique = True,
         max_length = 7,
