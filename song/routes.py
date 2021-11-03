@@ -51,8 +51,8 @@ def upload():
 
         if user:
 
-            if not user.is_pro and user.songs.lenght >= 3:
-                return {'message' : 'Max number of uploads reached. Upgrade to pro to upload more!'}, 400
+            if not user.is_pro and len(user.songs) >= 10:
+                return {'message' : 'Max number of uploads [10] reached. Upgrade to pro to upload more!'}, 400
             
             else:
                 try:
