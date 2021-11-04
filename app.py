@@ -30,10 +30,10 @@ app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=48)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['MAIL_SERVER'] = "smtp.gmail.com"
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_SERVER'] = "smtp.zoho.com"
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
 #app.config['MAIL_DEBUG'] = True
 app.config['MAIL_USERNAME'] = os.getenv('ADMIN_EMAIL')
 app.config['MAIL_PASSWORD'] = os.getenv('ADMIN_PASSWORD')
@@ -61,11 +61,10 @@ bcrypt = Bcrypt(app)
 CORS(app)
 jwt = JWTManager(app)
 mail = Mail(app)
-
 def send_email(subject, message, recipients):
     msg = Message(
     subject= subject,
-    sender="clickbait4587@gmail.com",
+    sender=os.getenv('ADMIN_EMAIL'),
     recipients=recipients)
 
     msg.html = message

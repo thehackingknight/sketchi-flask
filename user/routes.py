@@ -28,7 +28,7 @@ mail = Mail()
 def send_email(subject, message, recipients, res=None):
     msg = Message(
     subject= subject,
-    sender="clickbait4587@gmail.com",
+    sender="admin@tunedbass.com",
     recipients=recipients)
     
     msg.html = message
@@ -45,9 +45,9 @@ def send_email(subject, message, recipients, res=None):
                     usr = usr[0]
                     usr.delete()
                     print('User deleted')
-            except Exception as e:
+            except Exception as ex:
                 print('Could not delete user')
-                print(e)
+                #print(e)
         print('Could not send email Exception')        
         print(e)
         return {"message" : "Could not send email"}, 401
@@ -271,7 +271,7 @@ def signup():
     
         <h3>The verification is valid for only 48hrs</h3>
     
-        <p>For support please contact us at <a href="mailto:clickbait4587@gmail.com">clickbait4587@gmail.com</a></p>
+        <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
         </div>
         
     </body>
@@ -668,7 +668,7 @@ def forgot():
             If button does not work, use this url: 
             <a href="{os.getenv('CLIENT_URL') + '/auth/reset/' + str(tp.id)}">{os.getenv('CLIENT_URL') + '/auth/reset/' + str(tp.id)}</a>
         </p>
-    <p>For support please contact us at <a href="mailto:clickbait4587@gmail.com">clickbait4587@gmail.com</a></p>
+    <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
     </div>
     
 </body>
