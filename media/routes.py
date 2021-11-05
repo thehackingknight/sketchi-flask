@@ -14,7 +14,7 @@ def media(mtype, oid):
         if _file:
             if mtype == 'images':
                 #print(_file._file.type)
-                return send_file(_file._file, download_name=_file.name + _file.ext)
+                return send_file(_file._file, download_name=_file.name + '.' +  _file.ext)
             return _file._file.read()
         else:
             return "<h1>404</h1>", 404
@@ -31,7 +31,6 @@ def pg():
         try:
             body = request.form
             track = Track(title=body["title"], genre=body["genre"])
-            print(track)
             return "Hold up"
         except Exception as e:
             print(e)
