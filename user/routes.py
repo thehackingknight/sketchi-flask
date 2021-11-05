@@ -518,23 +518,24 @@ def update_user(iid):
             if img:
                 #upload_result = cloudinary.uploader.upload(img)
                 #user.avatar = upload_result['url']
+                ext = img.filename.split('.')[-1]
                 image = Media()
-                image.name = 'sketchi_' + uuid.uuid4().hex
+                image.name = 'sketchi_' + uuid.uuid4().hex + '.' + ext
                 image._type = "image"
-                image.ext = img.filename.split('.')[-1]
+                image.ext = ext
                 image._file.put(img, content_type=img.mimetype)
                 image.save()
 
                 print('Checking old image...')
                 old_image = None
                 try:
-                    old_image = Media.objects(id=str(user.avatar.split('/')[-1])).first()
+                    old_image = Media.objects(name=str(user.avatar.split('/')[-1])).first()
                 except Exception as e:
                     pass
                     if old_image:
                         old_image.delete()
                         print('Old image deleted')
-                user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.id)
+                user.avatar = os.getenv('DB_URL') + '/media/images/' + str(image.name)
                 user.save()
                 return jsonify({'url' : user.avatar})
         if feature == 'playlist':
@@ -723,7 +724,7 @@ def terminate(iid):
 
                 image = None
                 try:
-                    image = Media.objects(pk=user.avatar.split('/')[-1]).first()
+                    image = Media.objects(name=user.avatar.split('/')[-1]).first()
                 except Exception as e:
                     pass
                 if image:
@@ -737,7 +738,7 @@ def terminate(iid):
                         song_image = None
                         song_file = None
                         try:
-                            song_image = Media.objects(pk = song.image.split('/')[-1]).first()
+                            song_image = Media.objects(name = song.image.split('/')[-1]).first()
                             song_file = Media.objects(pk = song.url.split('/')[-1]).first()
                         except Exception as e:
                             pass

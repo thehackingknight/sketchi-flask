@@ -73,14 +73,15 @@ def upload():
 
                     if 'image' in files:
                         img = files["image"]
+                        ext = img.filename.split('.')[-1]
                         image = Media()
                         image.name = 'sketchi_' + uuid.uuid4().hex
                         image._type = "image"
-                        image.ext = img.filename.split('.')[-1]
+                        image.ext = ext
                         image._file.put(img, content_type=img.mimetype)
                         image.save()
 
-                        song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
+                        song.image = os.getenv('DB_URL') + '/media/images/' + image.name
                     if 'audio' in files:
                         aud = files["audio"]
                         track = Media()
@@ -292,20 +293,21 @@ def update_song(iid):
             #Delete prev image
             image = None
             try:
-                image = Media.objects(pk=song.image.split('/')[-1]).first()
+                image = Media.objects(name=song.image.split('/')[-1]).first()
             except Exception as e:
                 pass
             if image:
                 image.delete()
                 print('Song Prev Image deleted')
             img = files["image"]
+            ext = img.filename.split('.')[-1]
             image = Media()
-            image.name = 'sketchi_' + uuid.uuid4().hex
-            image.ext = img.filename.split('.')[-1]
+            image.name = 'sketchi_' + uuid.uuid4().hex + '.' + ext
+            image.ext = ext
             image._type = "image"
             image._file.put(img, content_type=img.mimetype)
             image.save()
-            song.image = os.getenv('DB_URL') + '/media/images/' + str(image.id)
+            song.image = os.getenv('DB_URL') + '/media/images/' + image.name
         song.save()
 
 
@@ -364,8 +366,6 @@ def delete_song(iid):
             song = Song.objects(iid=iid).first()
 
             if song:
-                print(iid)
-                print(user.songs)
                 user.songs.remove(iid)
                 song.delete()
                 user.save()

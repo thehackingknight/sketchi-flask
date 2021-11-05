@@ -8,13 +8,13 @@ router = Blueprint("media", __name__)
 @router.route("/media/<mtype>/<oid>")
 def media(mtype, oid):
     if True:
-        _file = Media.objects(pk=oid).first()
+        _file = Media.objects(pk=oid).first() if mtype == 'songs' else Media.objects(name=oid).first()
 
         
         if _file:
             if mtype == 'images':
                 #print(_file._file.type)
-                return send_file(_file._file, download_name=_file.name + '.' +  _file.ext)
+                return send_file(_file._file, download_name=_file.name)
             return _file._file.read()
         else:
             return "<h1>404</h1>", 404
