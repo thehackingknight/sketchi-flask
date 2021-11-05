@@ -521,6 +521,7 @@ def update_user(iid):
                 image = Media()
                 image.name = 'sketchi_' + uuid.uuid4().hex
                 image._type = "image"
+                image.ext = img.filename.split('.')[-1]
                 image._file.put(img, content_type=img.mimetype)
                 image.save()
 

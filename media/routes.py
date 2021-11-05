@@ -13,7 +13,8 @@ def media(mtype, oid):
         
         if _file:
             if mtype == 'images':
-                return send_file(_file._file, download_name=_file.name)
+                #print(_file._file.type)
+                return send_file(_file._file, download_name=_file.name + _file.ext)
             return _file._file.read()
         else:
             return "<h1>404</h1>", 404

@@ -76,6 +76,7 @@ def upload():
                         image = Media()
                         image.name = 'sketchi_' + uuid.uuid4().hex
                         image._type = "image"
+                        image.ext = img.filename.split('.')[-1]
                         image._file.put(img, content_type=img.mimetype)
                         image.save()
 
@@ -300,6 +301,7 @@ def update_song(iid):
             img = files["image"]
             image = Media()
             image.name = 'sketchi_' + uuid.uuid4().hex
+            image.ext = img.filename.split('.')[-1]
             image._type = "image"
             image._file.put(img, content_type=img.mimetype)
             image.save()
