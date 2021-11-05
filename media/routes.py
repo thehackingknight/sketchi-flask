@@ -9,6 +9,9 @@ router = Blueprint("media", __name__)
 def media(mtype, oid):
     if True:
         _file = Media.objects(pk=oid).first()
+
+        if mtype == 'images':
+            return send_file(_file._file, download_name=_file.name)
         if _file:
             return _file._file.read()
         else:

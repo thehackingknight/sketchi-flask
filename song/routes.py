@@ -249,6 +249,7 @@ def media(folder, filename):
             filepath = 'sketchi/media/songs/' + filename
         elif folder == 'images':
             filepath = 'sketchi/media/images/' + filename
+            return send_file(filepath, download_name=filename)
         with open(filepath, 'rb') as f:
 
             return f.read()#send_file(filepath, attachment_filename='file', as_attachment=False)
