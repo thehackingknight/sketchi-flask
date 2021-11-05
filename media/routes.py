@@ -10,9 +10,10 @@ def media(mtype, oid):
     if True:
         _file = Media.objects(pk=oid).first()
 
-        if mtype == 'images':
-            return send_file(_file._file, download_name=_file.name)
+        
         if _file:
+            if mtype == 'images':
+                return send_file(_file._file, download_name=_file.name)
             return _file._file.read()
         else:
             return "<h1>404</h1>", 404
