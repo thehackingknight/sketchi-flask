@@ -24,7 +24,31 @@ def playlists():
     
     
     return {'data' : list(map(clean, plists))}
-
+@router.get('/playlist/<oid>')
+def plist(oid):
+    p = Playlist.objects(pk=oid).first()
+    all_songs = songs()[0].json['songs']
+    if p:
+        tracks = filter(lambda song: song['iid'] in p.songs, all_songs)
+        p.songs = list(tracks)
+        return {'playlist': json.loads(p.to_json())}
+    else:
+        return '', 404
+    
+    return 'Hold up'
+@router.post('/playlist/<oid>/add')
+def add(oid):
+    plst = Playlist.objects(pk=oid).first()
+    form = request.form
+    if 'song_id' in form:
+        song_id = form['song_id']
+        plst.songs.remove(song_id) if song_id in plst.songs else plst.songs.append(song_id)
+        plst.save()
+        return {'songs' : plst.songs}, 200
+    else:
+        return 'no song_id specified', 400
+    print(form['song_id'])
+    return 'Hold up'
 @router.post('/playlist/create')
 def create():
 
