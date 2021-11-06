@@ -3,6 +3,9 @@ import mongoengine as me
 import json, os
 from datetime import datetime
 DB_URL = os.getenv('DB_URL') if os.getenv('DB_URL') is not None else ''
+
+
+
 class User(me.Document):
 
     username = me.StringField(
@@ -44,7 +47,7 @@ class User(me.Document):
     youtube = me.URLField()
     followers = me.ListField()    
     following = me.ListField()    
-    playlist = me.ListField()    
+    playlist = me.ListField()  
     songs = me.ListField()   
 
     is_verified = me.BooleanField(
