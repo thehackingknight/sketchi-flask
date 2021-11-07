@@ -317,6 +317,7 @@ def login():
 
         user = user[0]
         password_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), password)
+        
         if password_correct:
             token = gen_token(email)
             
@@ -661,7 +662,7 @@ def forgot():
     <div class="sketchi">
 
         <h1 style="font-size: 24px">Reset Password</h1>
-        <p>You have requested to reset your password for your <a href="{os.getenv('CLIENT_URL')}" class="brand">Snaredrum</a> account.</p>
+        <p>You have requested to reset your password for your <a href="{os.getenv('CLIENT_URL')}" class="brand">TunedBass</a> account.</p>
 
         <a style="font-weight: normal" class="red btn"  href="{os.getenv('CLIENT_URL') + '/auth/reset/' + str(tp.id)}">Reset password</a>
 
@@ -702,6 +703,7 @@ def reset():
                 password = request.form['password']
                 hashed_pass = bcrypt.generate_password_hash(password)
                 user.password = hashed_pass.decode()
+                user.save()
                 temp.delete()
                 return "Password reset successful!"
 
