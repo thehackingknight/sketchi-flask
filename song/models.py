@@ -49,8 +49,9 @@ class Song(Document):
     title = StringField(required=True)
     genre = StringField()
     uploader = StringField()
-    artist = StringField(max_length=20)
-    info =StringField(max_length=100)
+    album = StringField()
+    artist = StringField()
+    info =StringField(max_length=200)
     iid =  StringField(required=True, max_length=7)
     of_type = StringField(max_length=10)
     likes = ListField()
@@ -59,6 +60,7 @@ class Song(Document):
     tags = ListField(max_length=3)
     comments = ListField(EmbeddedDocumentField(Comment))
     playlist = ListField()
+    plays = ListField(default=[])
     release_date = StringField()
     image = StringField(
         default= DB_URL  + "/sketchi/media/images/songdummy.png"

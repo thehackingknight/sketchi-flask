@@ -47,12 +47,16 @@ class User(me.Document):
     youtube = me.URLField()
     followers = me.ListField()    
     following = me.ListField()    
-    playlist = me.ListField()  
-    songs = me.ListField()   
+    playlist = me.ListField()
+    playlists = me.ListField(me.ReferenceField('Playlist'))  
+    songs = me.ListField()
 
     is_verified = me.BooleanField(
         default=False
-        ) 
+        )
+    is_joining = me.BooleanField(
+        default=True
+        )
     is_pro = me.BooleanField(
         default=False
         ) 

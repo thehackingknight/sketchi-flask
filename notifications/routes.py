@@ -18,7 +18,7 @@ def user_notifications(user_id):
 
     user = User.objects(iid=user_id).first()
     if user:
-        notifications = Notifications.objects(to=user.iid)
+        notifications = Notifications.objects(to=user.iid, _from__ne=user.iid)
 
         def clean(notif):
             notif._from = json.loads(User.objects(iid=notif._from).first().to_json())

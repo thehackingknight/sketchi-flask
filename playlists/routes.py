@@ -17,12 +17,17 @@ def validate(request):
 def playlists():
     plists = Playlist.objects()
     all_songs = songs()[0].json['songs']
+    
+    
+    
+    if 'creator' in request.args:
+        c = request.args['creator']
+        plists = Playlist.objects(creator=c)
     def clean(plst):
         tracks = filter(lambda song: song['iid'] in plst.songs, all_songs)
         plst.songs = list(tracks)
         return json.loads(plst.to_json())
-    
-    
+
     return {'data' : list(map(clean, plists))}
 @router.get('/playlist/<oid>')
 def plist(oid):
@@ -49,6 +54,8 @@ def add(oid):
         return 'no song_id specified', 400
     print(form['song_id'])
     return 'Hold up'
+
+
 @router.post('/playlist/create')
 def create():
 
@@ -69,6 +76,8 @@ def create():
             plst.songs.append(iid)
 
             plst.save()
+            creator.playlists.append(plst.id)
+            creator.save()
             return 'Hold up'
         else:
             return 'Unauthorized', 404

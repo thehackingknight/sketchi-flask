@@ -199,7 +199,7 @@ def signup():
         url = f'{os.getenv("CLIENT_URL")}/auth/confirm?token={token}'
         
         return send_email(
-            subject= "Sketchi validation email",
+            subject= "TunedBass validation email",
              message = f"""
              <html lang="en">
     <head>
@@ -209,7 +209,7 @@ def signup():
         <style type="text/css">
     
     
-                .sketchi{{
+                .TunedBass{{
                     font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
                     margin: auto;
                     padding: 10px;
@@ -259,9 +259,9 @@ def signup():
     </head>
     <body>
     
-        <div class="sketchi">
+        <div class="TunedBass">
     
-        <h1>Thank you for signing up to Sketchi!</h1>
+        <h1>Thank you for signing up to TunedBass!</h1>
     
         <p>To finish up, Click the button to verify your account.</p>
         <a href="{url}" target="_blank" class="btn btn-primary">Verify</a>
@@ -296,7 +296,6 @@ def login():
         token = request.headers['Authorization'].split(' ')[1]
         if token:
             email = validate(request)['sub']
-            print(email)
             user = User.objects(email = email)
             if user:
                 user = user[0]
@@ -508,6 +507,8 @@ def update_user(iid):
                 else:
                     for key, value in info.items():
                         setattr(user, key, value)
+                    if user.is_joining:
+                        user.is_joining = False
                     user.save()
                     return jsonify({'data' : 'Info updtate'})
 
@@ -521,7 +522,7 @@ def update_user(iid):
                 #user.avatar = upload_result['url']
                 ext = img.filename.split('.')[-1]
                 image = Media()
-                image.name = 'sketchi_' + uuid.uuid4().hex + '.' + ext
+                image.name = 'TunedBass_' + uuid.uuid4().hex + '.' + ext
                 image._type = "image"
                 image.ext = ext
                 image._file.put(img, content_type=img.mimetype)
@@ -607,18 +608,18 @@ def forgot():
     <style type="text/css">
 
 
-            .sketchi{{
+            .TunedBass{{
                      font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
                 margin: auto;
                 padding: 10px;
         }}
 
-            .sketchi *, .sketchi{{
+            .TunedBass *, .TunedBass{{
                 -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;
             }}
 
-            .sketchi::-webkit-scrollbar{{
+            .TunedBass::-webkit-scrollbar{{
                 display: none;
               }}
 
@@ -659,7 +660,7 @@ def forgot():
 </head>
 <body>
 
-    <div class="sketchi">
+    <div class="TunedBass">
 
         <h1 style="font-size: 24px">Reset Password</h1>
         <p>You have requested to reset your password for your <a href="{os.getenv('CLIENT_URL')}" class="brand">TunedBass</a> account.</p>

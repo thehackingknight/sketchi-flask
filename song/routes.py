@@ -6,7 +6,7 @@ from notifications.models import Notifications
 import jwt, datetime,json,random, string, os
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from datetime import datetime
 import time
 import uuid
@@ -555,3 +555,22 @@ def search():
 
         sngs = list(map(clean_songs, songs))
         return {'songs' : sngs, 'artists' : artsts}
+
+
+@router.post('/song/<song_id>/play')
+def play(song_id):
+
+    verify_jwt_in_request()
+    token = request.headers['Authorization'].split(' ')[1]
+    if token:
+        email = validate(request)['sub']
+        user = User.objects(email = email).first()
+
+    song = Song.objects(iid=song_id).first()
+    if song:
+        song.plays.append(str(user.id)) if user else song.plays.append('anonymous')
+        song.save()
+        return {'plays' : len(song.plays)}
+
+    else:
+        return 'song not found', 404
