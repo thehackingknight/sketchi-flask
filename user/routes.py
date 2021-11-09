@@ -335,50 +335,48 @@ def user(iid):
     if request.method == 'GET':
 
         if user:
-            feature = request.args['f']
-
-            if feature == 'playlist':
-                verify_jwt_in_request()
-                email = validate(request)['sub']
-                if email:
-                    user = User.objects(email=email).first()
-                    songs = []
-                    for song_id in user.playlist:
-                        song = Song.objects(iid=song_id).first()
-                        if song:
-                            songs.append(song)
-                    def clean_replies(resp):
-                        by = User.objects(iid=resp.by)[0].to_json()
-                        resp.by = json.loads(by)
-                        return json.loads(resp.to_json())
-                    def clean_comments(comment):
-                        commenter = User.objects(iid=comment.commenter)[0].to_json()
-                        comment.commenter = json.loads(commenter)
-                        comment.replies = list(map(clean_replies, comment.replies))
-                        return json.loads(comment.to_json())
-                    def clean_songs(song):
-                        if song:
-                            uploader = User.objects(iid=song.uploader).first().to_json()
-                            song.uploader = json.loads(uploader)
-                            song.comments = list(map(clean_comments, song.comments))
-                            song = song.to_json()
-                            return json.loads(song)
-                    data = list(map(clean_songs, songs))
-                    print(data)
-                    try:
-                        #print(tracks.get())
-                        return jsonify({'songs': data}), 200
-                    except  Exception as e:
-                        print(e)
-                        return 'Exception'                 
-                    return 'Yima nyana'
-                else:
-                    return 'Auth required', 401
+            query = request.args
+            if 'f' in query:
+                feature = query['f']
+                if feature == 'playlist':
+                    verify_jwt_in_request()
+                    email = validate(request)['sub']
+                    if email:
+                        user = User.objects(email=email).first()
+                        songs = []
+                        for song_id in user.playlist:
+                            song = Song.objects(iid=song_id).first()
+                            if song:
+                                songs.append(song)
+                        def clean_replies(resp):
+                            by = User.objects(iid=resp.by)[0].to_json()
+                            resp.by = json.loads(by)
+                            return json.loads(resp.to_json())
+                        def clean_comments(comment):
+                            commenter = User.objects(iid=comment.commenter)[0].to_json()
+                            comment.commenter = json.loads(commenter)
+                            comment.replies = list(map(clean_replies, comment.replies))
+                            return json.loads(comment.to_json())
+                        def clean_songs(song):
+                            if song:
+                                uploader = User.objects(iid=song.uploader).first().to_json()
+                                song.uploader = json.loads(uploader)
+                                song.comments = list(map(clean_comments, song.comments))
+                                song = song.to_json()
+                                return json.loads(song)
+                        data = list(map(clean_songs, songs))
+                        try:
+                            #print(tracks.get())
+                            return jsonify({'songs': data}), 200
+                        except  Exception as e:
+                            print(e)
+                            return 'Exception'                 
+                        return 'Yima nyana'
+                    else:
+                        return 'Auth required', 401
 
 
             songs = song_routes.songs()[0].json['songs']
-            #songs = json.loads(songs)
-
             user_songs = filter(lambda song: song['iid'] in user.songs, songs)
             user.songs = list(user_songs)
             user = user.to_json()
