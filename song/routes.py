@@ -227,8 +227,7 @@ def song_by_iid(iid):
     try:
         track = Song.objects(iid=iid).first()
         if track:
-            track = track._data
-            del track['id']
+            track = track.to_json()
             """
             uploader = User.objects(iid = track['uploader_id'])[0]
             uploader = uploader._data
@@ -236,7 +235,7 @@ def song_by_iid(iid):
             del uploader['id']
             track['uploader'] = uploader"""
             
-            return jsonify({'song': track})
+            return jsonify({'song': json.loads(track)})
         else:
             return {'message': 'Song not found'}, 404
     except Exception as e:

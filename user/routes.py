@@ -287,41 +287,38 @@ def signup():
             status= 500,
         )
 
+@router.post('/auth/getuser')
+@jwt_required()
+def get_user():
+    email = validate(request)['sub']
+    user = User.objects(email = email).first()
+    token = request.headers['Authorization'].split(' ')[1]
+    if user:
+        return jsonify({'user' : user.to_json(), 'token': token})
+
+    else:
+        return 'invalid token', 404
+    
+
 @router.route('/auth/login', methods=['POST'])
 
 def login():
     
-    try:
-        verify_jwt_in_request()
-        token = request.headers['Authorization'].split(' ')[1]
-        if token:
-            email = validate(request)['sub']
-            user = User.objects(email = email)
-            if user:
-                user = user[0]
-                
-            """
-            user['_id'] = str(user['_id'])
-            del user['password']"""
-            return jsonify({'user' : user.to_json(), 'token': token})
-    except Exception as e:
-        print(e)
-
     email = request.form.get('email')
     password = request.form.get('password')
-    user = User.objects(email=email)
+    user = User.objects(email=email).first()
 
 
     if user:
 
-        user = user[0]
         password_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), password)
-        
+        print(password)
+        print(password_correct)
         if password_correct:
             token = gen_token(email)
             
-            user = user.to_json()
-            return jsonify({'user' : json.loads(user), 'token' : token})
+            data = user.to_json()
+            return {'user' : json.loads(data), 'token' : token}
         else:
             return {"message" : "Incorrect Password"}, 400
     else:
