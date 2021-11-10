@@ -16,8 +16,7 @@ def validate(request):
 @router.route('/playlists', methods=[ 'GET'])
 def playlists():
     plists = Playlist.objects()
-    all_songs = songs()[0].json['songs']
-    
+    all_songs = songs()[0]['songs']
     
     
     if 'creator' in request.args:
@@ -32,7 +31,7 @@ def playlists():
 @router.get('/playlist/<oid>')
 def plist(oid):
     p = Playlist.objects(pk=oid).first()
-    all_songs = songs()[0].json['songs']
+    all_songs = songs()[0]['songs']
     if p:
         tracks = filter(lambda song: song['iid'] in p.songs, all_songs)
         p.songs = list(tracks)

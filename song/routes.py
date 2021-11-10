@@ -128,7 +128,6 @@ def songs():
     print()
     if 'ids' in args:
         try:
-            print(type(args['ids']))
             ids = json.loads(args['ids'])
             tracks = Song.objects(iid__nin=ids)[0 : 10]
         except Exception as e:
@@ -166,14 +165,16 @@ def songs():
         uploader = User.objects(iid=song.uploader)[0].to_json()
         song.uploader = json.loads(uploader)
         song.comments = list(map(clean_comments, song.comments))
+        
         song = song.to_json()
+        
         return json.loads(song)
 
     data = list(map(clean_songs, tracks))
     try:
         #print(tracks.get())
-        
-        return jsonify({'songs': data}), 200
+        print(data[0]['likes'])
+        return {'songs': data}, 200
     except  Exception as e:
         print(e)
         return 'Exception' 
@@ -337,7 +338,7 @@ def like(iid):
                     return {'data': 'Song liked'}, 200
 
                 else:
-                    return {'User already likes the song'}, 400
+                    return {'User already liked the song'}, 400
 
             elif action== 'dislike':
                 song.likes.remove(user.iid)

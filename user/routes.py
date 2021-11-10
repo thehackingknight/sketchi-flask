@@ -375,8 +375,8 @@ def user(iid):
                     else:
                         return 'Auth required', 401
 
-
-            songs = song_routes.songs()[0].json['songs']
+            
+            songs = song_routes.songs()[0]['songs']
             user_songs = filter(lambda song: song['iid'] in user.songs, songs)
             user.songs = list(user_songs)
             user = user.to_json()
