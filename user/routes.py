@@ -796,6 +796,7 @@ def visit():
     form = request.form
     if 'ip'in form:
         ip = form['ip']
+        print(ip)
         user = AU()
         try:
             user.ip = ip
