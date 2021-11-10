@@ -5,6 +5,8 @@ from datetime import datetime
 DB_URL = os.getenv('DB_URL') if os.getenv('DB_URL') is not None else ''
 
 
+class AnonymousUser(me.Document):
+    ip = me.StringField(unique=True)
 
 class User(me.Document):
 

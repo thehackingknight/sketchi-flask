@@ -1,7 +1,7 @@
 
 from flask import Flask,jsonify, request, Response, Blueprint
 
-from user.models import User
+from user.models import User, AnonymousUser as AU
 from song.models import Song
 from temps.models import TempPath
 import song.routes as song_routes
@@ -789,3 +789,22 @@ def delpic(oid):
     except Exception as e:
         print(e)
     return 'working'
+
+import mongoengine as me
+@router.post('/visit')
+def visit():
+    form = request.form
+    if 'ip'in form:
+        ip = form['ip']
+        user = AU()
+        try:
+            user.ip = ip
+            
+            user.save()
+            print('New anonymous user saved')
+            return 'OK', 200
+        except me.NotUniqueError:
+            return '', 200
+        
+    else:
+        return 'No IP',400
