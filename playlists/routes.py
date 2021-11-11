@@ -6,7 +6,7 @@ import json, jwt, os
 import time
 from datetime import datetime
 from song.routes import songs
-router = Blueprint('playlist', __name__)
+router = Blueprint('playlist', __name__) 
 
 def validate(request):
     token = request.headers['Authorization'].split(' ')[1]
@@ -82,4 +82,6 @@ def create():
             return 'Unauthorized', 404
     except Exception as e:
         print(e)
+        if e == 'Signature has expired':
+            return 'Your session has expired', 401
         return 'something went wrong', 500

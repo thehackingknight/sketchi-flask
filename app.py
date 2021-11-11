@@ -20,6 +20,7 @@ app = Flask(__name__)
 from user.routes import router as user_router
 from song.routes import router as song_router
 from api.routes import router as api_router
+from messages.routes import router as messages_router
 from media.routes import router as media_router
 from playlists.routes import router as playlists_router
 from notifications.routes import router as notifications_router
@@ -54,6 +55,7 @@ else:
 app.register_blueprint(user_router)
 app.register_blueprint(song_router)
 app.register_blueprint(api_router)
+app.register_blueprint(messages_router)
 app.register_blueprint(media_router)
 app.register_blueprint(playlists_router)
 app.register_blueprint(notifications_router)

@@ -134,14 +134,15 @@ def songs():
             print(e)
             return 'Something went wrong', 500
         
-
+    if 'by' in args:
+        tracks = Song.objects(uploader=args['by'])
     #else:
     #return {'message': 'Please provide list of IDS'}, 400
 
 
     params = request.args
     if 'genre' in params:
-        genre = (params['genre'])
+        genre = params['genre']
         tracks = Song.objects(genre = genre)
         if genre == 'all':
             tracks = Song.objects()
@@ -173,11 +174,10 @@ def songs():
     data = list(map(clean_songs, tracks))
     try:
         #print(tracks.get())
-        print(data[0]['likes'])
         return {'songs': data}, 200
     except  Exception as e:
         print(e)
-        return 'Exception' 
+        return 'Exception' , 500
 
 @router.route('/songs/suggested', methods=['GET', 'POST'])
 def suggested_songs():
@@ -348,12 +348,12 @@ def like(iid):
                 if user.iid not in song.likes:
                     song.likes.append(user.iid)
                     
-
+                    print('saving song')
                     song.save()
                     return {'data': 'Song liked'}, 200
 
                 else:
-                    return {'User already liked the song'}, 400
+                    return 'User already liked the song', 400
 
             elif action== 'dislike':
                 song.likes.remove(user.iid)
