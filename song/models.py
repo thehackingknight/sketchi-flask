@@ -61,7 +61,7 @@ class Song(Document):
     comments = ListField(EmbeddedDocumentField(Comment))
     playlist = ListField()
     plays = ListField(default=[])
-    downloads = IntField(default=0)
+    downloads = ListField(default=[])
     release_date = StringField()
     image = StringField(
         default= DB_URL  + "/sketchi/media/images/songdummy.png"

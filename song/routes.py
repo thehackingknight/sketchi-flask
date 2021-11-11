@@ -259,6 +259,21 @@ def media(folder, filename):
         print(e)
         return {'message': 'Could not find file specified'}, 404
 
+@router.route('/song/<iid>/download', methods=['POST'])
+def download(iid):
+    song = Song.objects(iid=iid).first()
+    if song:
+        if 'dldtkn' in request.args:
+            token = request.args['dldtkn']
+            info = jwt.decode(token, 'CyuJT65KcLcNSOUJVLNCqXztE4XNYkG5', algorithms=['HS256'])
+            ip = info['ip']
+            song.downloads.append(ip)
+            song.save()
+
+            return 'OK'
+
+        else:
+            return 'Missing Token', 400
 
 @router.route('/song/<iid>/update', methods=['POST'])
 @jwt_required()
