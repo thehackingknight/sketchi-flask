@@ -75,7 +75,7 @@ def upload():
                         img = files["image"]
                         ext = img.filename.split('.')[-1]
                         image = Media()
-                        image.name = 'sketchi_' + uuid.uuid4().hex
+                        image.name = 'sketchi_' + uuid.uuid4().hex + '.' + ext
                         image._type = "image"
                         image.ext = ext
                         image._file.put(img, content_type=img.mimetype)
