@@ -149,6 +149,8 @@ def songs():
     if 'iid' in params:
         iid = params['iid']
         tracks = Song.objects(iid = iid)
+        if not len(tracks):
+            return 'Song not found', 404
 
 
     def clean_replies(resp):
