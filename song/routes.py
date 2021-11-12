@@ -577,15 +577,16 @@ def search():
 @router.post('/song/<song_id>/play')
 def play(song_id):
 
-    verify_jwt_in_request()
-    token = request.headers['Authorization'].split(' ')[1]
-    if token:
-        email = validate(request)['sub']
-        user = User.objects(email = email).first()
-
+    user = 'anonymous'
+    if 'Authorization' in request.headers:
+        token = request.headers['Authorization'].split(' ')[1]
+        if token:
+            email = validate(request)['sub']
+            user = User.objects(email = email).first()
+    
     song = Song.objects(iid=song_id).first()
     if song:
-        song.plays.append(str(user.id)) if user else song.plays.append('anonymous')
+        song.plays.append('anonymous') if user == 'anonymous' else song.plays.append(str(user.id)) 
         song.save()
         return {'plays' : len(song.plays)}
 
