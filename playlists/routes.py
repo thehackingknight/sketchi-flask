@@ -1,4 +1,5 @@
 from flask import request, Blueprint
+import mongoengine
 from .models import Playlist
 from user.models import User
 from song.models import Song
@@ -30,14 +31,17 @@ def playlists():
     return {'data' : list(map(clean, plists))}
 @router.get('/playlist/<oid>')
 def plist(oid):
-    p = Playlist.objects(pk=oid).first()
+    try:
+        p = Playlist.objects(pk=oid).first()
+    except mongoengine.errors.ValidationError:
+        return 'Playlist not found', 404
     all_songs = songs()[0]['songs']
     if p:
         tracks = filter(lambda song: song['iid'] in p.songs, all_songs)
         p.songs = list(tracks)
         return {'playlist': json.loads(p.to_json())}
     else:
-        return '', 404
+        return'Playlist not found', 404
     
     return 'Hold up'
 @router.post('/playlist/<oid>/add')
