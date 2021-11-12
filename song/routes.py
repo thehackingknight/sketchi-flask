@@ -12,6 +12,9 @@ import time
 import uuid
 from media.models import Media
 from io import BytesIO
+from mongoengine.queryset.visitor import Q
+from flask_jwt_extended import create_access_token
+import requests
 
 router = Blueprint('song', __name__)
 bcrypt = Bcrypt()
@@ -136,6 +139,12 @@ def songs():
         
     if 'by' in args:
         tracks = Song.objects(uploader=args['by'])
+
+    if 'rt' in args:
+        song = Song.objects(iid=args['rt']).first()
+        filters = Q(uploader=song.uploader)
+        filters  | Q(album=song.album) if song.album else ''
+        tracks = Song.objects(filters)
     #else:
     #return {'message': 'Please provide list of IDS'}, 400
 
@@ -168,7 +177,7 @@ def songs():
         uploader = User.objects(iid=song.uploader)[0].to_json()
         song.uploader = json.loads(uploader)
         song.comments = list(map(clean_comments, song.comments))
-        
+        song.url = create_access_token(identity={'url': song.url})
         song = song.to_json()
         
         return json.loads(song)
@@ -592,3 +601,19 @@ def play(song_id):
 
     else:
         return 'song not found', 404
+
+@router.get('/file')
+def get_blob():
+    params = request.args
+
+    if 'url' in params:
+        
+        token = params['url']
+        info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+        
+        url = info['sub']['url']
+        res =requests.get(url)
+
+        return res.text
+    else:
+        return '', 400
