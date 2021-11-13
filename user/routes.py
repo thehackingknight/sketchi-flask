@@ -467,22 +467,28 @@ def update_user(iid):
     if email:
         user = User.objects(email=email).first()
         if feature == 'followers':
-            artist = User.objects(iid=iid).first()
-            if params['action'] == 'follow':
-                artist.followers.append(user.iid)
-                artist.save()
+            try:
+                artist = User.objects(iid=iid).first()
+                print(artist)
+                if params['action'] == 'follow':
+                    print(user.iid)
+                    artist.followers.append(user.iid)
+                    artist.save()
 
-                user.following.append(artist.iid)
-                user.save()
-                
-                return {'followers' : artist.followers}
-            else:
-                artist.followers.remove(user.iid)
-                user.following.remove(artist.iid)
+                    user.following.append(artist.iid)
+                    user.save()
 
-                artist.save()
-                user.save()
-                return {'followers' : artist.followers}
+                    return {'followers' : artist.followers}
+                else:
+                    artist.followers.remove(user.iid)
+                    user.following.remove(artist.iid)
+
+                    artist.save()
+                    user.save()
+                    return {'followers' : artist.followers}
+            except Exception as e:
+                print(e)
+                return 'Something went wrong', 50
         if feature == 'info':
             try:
                 
@@ -569,6 +575,10 @@ def confirm():
                 if True:
                     user.is_verified = True
                     user.save()
+                    if email != 'admin@tunedbass.com':
+                        admin = User.objects(email='admin@tunedbass.com').first()
+                        admin.followers.append(info['sub']['iid'])
+                        admin.save()
 
                     user = user._data
                     del user['password']

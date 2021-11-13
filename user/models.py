@@ -13,12 +13,10 @@ class User(me.Document):
     username = me.StringField(
         unique = True,
         required = True,
-        max_length = 20
     )
     email = me.StringField(
         unique = True,
         required = True,
-        max_length = 50
     )
     password = me.StringField(
         required = True,
@@ -30,13 +28,12 @@ class User(me.Document):
         max_length = 50
     )
     bio = me.StringField(
-        max_length = 100
+        max_length = 500
     )
 
     address = me.StringField()
     iid = me.StringField(
         unique = True,
-        max_length = 7,
         required = True
     )
 
@@ -52,7 +49,7 @@ class User(me.Document):
     playlist = me.ListField()
     playlists = me.ListField(me.ReferenceField('Playlist'))  
     songs = me.ListField()
-   
+    is_admin= me.BooleanField(default=False)
 
     is_verified = me.BooleanField(
         default=False
