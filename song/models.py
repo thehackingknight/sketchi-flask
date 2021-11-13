@@ -68,6 +68,7 @@ class Song(Document):
         
         )
     url= StringField()
+    cloudinary_id= StringField()
     
     duration  = StringField(default='0')
     date_created = DateTimeField(

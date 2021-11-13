@@ -128,7 +128,6 @@ def songs():
     
     args = request.args
     tracks = Song.objects()
-    print()
     if 'ids' in args:
         try:
             ids = json.loads(args['ids'])
@@ -190,19 +189,44 @@ def songs():
         print(e)
         return 'Exception' , 500
 
+
+
 @router.route('/songs/suggested', methods=['GET', 'POST'])
-def suggested_songs():
+def suggested():
     
+    args = request.args
     tracks = Song.objects()
+    if 'ids' in args:
+        try:
+            ids = json.loads(args['ids'])
+            tracks = Song.objects(iid__nin=ids)[0 : 10]
+        except Exception as e:
+            print(e)
+            return 'Something went wrong', 500
+        
+    if 'by' in args:
+        tracks = Song.objects(uploader=args['by'])
+
+    if 'rt' in args:
+        song = Song.objects(iid=args['rt']).first()
+        filters = Q(uploader=song.uploader)
+        filters  | Q(album=song.album) if song.album else ''
+        tracks = Song.objects(filters)
+    #else:
+    #return {'message': 'Please provide list of IDS'}, 400
+
+
     params = request.args
     if 'genre' in params:
-        genre = (params['genre'])
+        genre = params['genre']
         tracks = Song.objects(genre = genre)
         if genre == 'all':
             tracks = Song.objects()
     if 'iid' in params:
         iid = params['iid']
         tracks = Song.objects(iid = iid)
+        if not len(tracks):
+            return 'Song not found', 404
 
 
     def clean_replies(resp):
@@ -220,17 +244,19 @@ def suggested_songs():
         uploader = User.objects(iid=song.uploader)[0].to_json()
         song.uploader = json.loads(uploader)
         song.comments = list(map(clean_comments, song.comments))
+        song.url = create_access_token(identity={'url': song.url})
         song = song.to_json()
+        
         return json.loads(song)
 
     data = list(map(clean_songs, tracks))
     try:
         #print(tracks.get())
-        
-        return jsonify({'songs': data}), 200
+        return {'songs': data}, 200
     except  Exception as e:
         print(e)
-        return 'Exception' 
+        return 'Exception' , 500
+
 
 
 
