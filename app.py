@@ -46,9 +46,9 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('ADMIN_EMAIL')
 # Connect Database
 
 if os.environ['ENV'] == 'prod':
-    engine.connect(host=os.getenv('MONGO_URL'), db="sketchi", ssl=True,ssl_cert_reqs='CERT_NONE')
+    engine.connect(host=os.getenv('MONGO_URL'), db="tunedbass", ssl=True,ssl_cert_reqs='CERT_NONE')
 else:
-    engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="sketchi")
+    engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="tunedbass")
 
 
 
