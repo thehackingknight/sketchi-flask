@@ -58,6 +58,26 @@ def add(oid):
     print(form['song_id'])
     return 'Hold up'
 
+@router.post('/playlist/<oid>/update')
+def update(oid):
+
+    try:
+        plst = Playlist.objects(pk=oid).first()
+        form = request.form
+
+        if plst:
+            for key, value in form.items():
+                print(key,value)
+                setattr(plst, key, value)
+            plst.save()
+            return 'Playlist updated'
+        else:
+            return 'Playlist with specified ID not found', 404
+
+    except Exception as e:
+        print(e)
+        return 'Something went wrong', 500
+
 
 @router.post('/playlist/create')
 def create():
