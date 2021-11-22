@@ -49,7 +49,7 @@ if os.environ['ENV'] == 'prod':
     engine.connect(host=os.getenv('MONGO_URL'), db="tunedbass", ssl=True,ssl_cert_reqs='CERT_NONE')
 else:
     engine.connect(host=os.getenv('MONGO_URL_LOCAL'), db="tunedbass")
-
+ 
 
 
 app.register_blueprint(user_router)

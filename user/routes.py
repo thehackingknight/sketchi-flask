@@ -469,9 +469,7 @@ def update_user(iid):
         if feature == 'followers':
             try:
                 artist = User.objects(iid=iid).first()
-                print(artist)
                 if params['action'] == 'follow':
-                    print(user.iid)
                     artist.followers.append(user.iid)
                     artist.save()
 
@@ -516,6 +514,10 @@ def update_user(iid):
             except Exception as e:
                 print(e)
                 return {'message' : 'Something went wrong'}, 500
+        if feature == 'email':
+            user.email = info['email']
+            user.save()
+            return 'Email changed successfully', 200
         if feature == 'avatar':
             img = request.files['file']
             if img:
@@ -819,5 +821,35 @@ def visit():
         
     else:
         return 'No IP',400
+
+@router.post('/account/change-pass')
+@jwt_required()
+def change_pass():
+
+    try:
+        form = request.form
+        email = validate(request)['sub']
+
+        user =User.objects(email=email).first()
+        if user:
+            opass = form['opass']
+            pwd = form['pwd']
+
+            pswd_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), opass)
+            if pswd_correct:
+                hashed_pass = bcrypt.generate_password_hash(pwd)
+                user.password = hashed_pass
+                return 'Password changed successfully'
+
+            else:
+                return 'Incorrect old Password', 400
+        else:
+
+            return 'No user with specified email found', 404
+        
+    except Exception as e:
+        print(e)
+        return 'Something went wrong', 500
+    
 
 
