@@ -50,7 +50,7 @@ def upload():
         if email:
             user = User.objects(email=email).first()
         else:
-            return {'Invalid token'}, 401
+            return {'message': 'Invalid token'}, 401
 
         if user:
 
