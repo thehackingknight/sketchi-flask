@@ -57,7 +57,7 @@ class Song(Document):
     likes = ListField()
     shares = ListField()
     collabos = ListField()
-    tags = ListField(max_length=3)
+    tags = ListField(max_length=10)
     comments = ListField(EmbeddedDocumentField(Comment))
     playlist = ListField()
     plays = ListField(default=[])

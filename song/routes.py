@@ -39,6 +39,18 @@ def gen_id(N, w):
         with open(ids_path, 'w') as f:
             json.dump(obj,f) 
         return ran_id
+
+@router.route('/upload', methods=['POST'])
+@jwt_required()
+def upload_file():
+
+    try:
+        print(request.files)
+        return 'gg'
+    except Exception as e:
+        print(e)
+        return 'Som went wrong', 500
+    
 @router.route('/song/upload', methods=['POST'])
 @jwt_required()
 def upload():
@@ -89,6 +101,7 @@ def upload():
                         aud = files["audio"]
                         track = Media()
                         track.name = 'sketchi_' + uuid.uuid4().hex
+                        print(track.name)
                         track._type = "audio"
                         track._file.put(aud)
                         #track._file.put(aud, content_type=aud.mimetype)
