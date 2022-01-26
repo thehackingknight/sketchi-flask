@@ -3,7 +3,7 @@ from flask import Flask,jsonify, request, Response, Blueprint
 
 from user.models import User, AnonymousUser as AU
 from song.models import Song
-from temps.models import TempPath
+from temps.models import TempPath, TempToken
 import song.routes as song_routes
 import jwt, datetime,json,random, string, uuid
 from dotenv import load_dotenv
@@ -11,6 +11,7 @@ import os, cloudinary,json, requests, re
 import cloudinary.uploader
 from flask_bcrypt import Bcrypt
 from random import *
+
 from flask_mail import Mail, Message
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
@@ -129,8 +130,17 @@ def gen_pass():
     password =  "".join(choice(characters) for x in range(randint(8, 16)))
     return password
 
-def gen_token(identity, hours=1):
-    return create_access_token(identity=identity)
+def gen_token(identity, time={'h' : 24}):
+    
+    k = list(time.keys())[0]
+    v = list(time.values())[0]
+    if k == 'h':
+        token = create_access_token(identity=identity, expires_delta=datetime.timedelta(hours=v))
+
+    elif k == 'm':
+        token = create_access_token(identity=identity, expires_delta=datetime.timedelta(minutes=v))
+
+    return token
 
 @router.route('/users', methods=['GET'])
 def users():
@@ -148,147 +158,217 @@ def users():
     return {'users': data}
     
 
+def gen_code():
+
+    codes = TempToken.objects()
+    _min = 100000
+    _max = 999999
+    code = randint(_min, _max - 1)
+    def fun():
+        code_exists = TempToken.objects(code=code).first()
+
+        if code_exists:
+            gen_code()
+        else:
+            return code
+
+    c = fun()
+    return c
+
+@router.get('/testcodes')
+def testcodes():
+
+    
+
+    code = gen_code()
+    return {'OPT' : f'tb_{code}'}
+
+@router.post('/auth/otp')
+def otp():
+
+    try:
+        OTP = request.form.get('OTP');
+        token = request.form.get('tkn');
+
+        tempTkn = TempToken.objects(code=OTP).first();
+        if tempTkn:
+            data = jwt.decode(tempTkn.token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+            info = data['sub']
+            email = info['email']
+            user = User()
+            for key, val in info.items():
+                setattr(user, key, val)
+            if True:
+                user.is_verified = True
+                user.save()
+                if email != 'admin@tunedbass.com':
+                    #Follow admin
+                    admin = User.objects(email='admin@tunedbass.com').first()
+                    admin.followers.append(info['iid'])
+                    admin.save()
+
+                user = user._data
+                del user['password']
+                user['id'] = str(user['id'])
+                return {'user' : user, 'token' : gen_token(user['email'], {'h' : 24})}
+        else:
+            return {'msg' : 'Invalid code'}, 400
+        
+        #print(OTP, token)
+        return 'ok'
+    except Exception as e:
+        print(e)
+        return {'msg' : 'Something went wrong'}, 500
+
 @router.route('/auth/signup', methods=['POST'])
+
 def signup():
 
     method = request.args['method']
-    
-    username = request.form.get('username')
-    
-    email = request.form.get('email')
-    password = request.form.get('password')
+    try:
+        username = request.form.get('username')
 
-    existing_email = User.objects(email=email)
-    
-    if method == 'google':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        existing_email = User.objects(email=email)
+
+        if method == 'google':
+            iid = gen_id(7)
+            username = iid
+            password = gen_pass()
+
+            if existing_email:
+                #login user
+                user = User.objects(email=email)
+                if user:
+                    user = user[0]._data
+                    del user['password']
+                    user['id'] = str(user['id'])
+                    token = gen_token( email, {'h' : 24})
+
+                    songs = get_songs(user)
+                    return {'user': user, 'token': token}
+
         iid = gen_id(7)
-        username = iid
-        password = gen_pass()
-
+        hashed_pass = bcrypt.generate_password_hash(password)
+        existing_username = User.objects(username=username)
+        if existing_username:
+            return {'message' : f'User with username {username} already exists!'}, 400
         if existing_email:
-            #login user
-            user = User.objects(email=email)
-            if user:
-                user = user[0]._data
-                del user['password']
-                user['id'] = str(user['id'])
-                token = gen_token(email)
+            return {'message' : f'User with email {email} already exists!'}, 400
+        user = User()
+        for key, value in request.form.items():
+            setattr(user, key, value)
+        if not validate_email(email):
+            return {'message' : f'Please enter a valid email address.'}, 400
+        user.password = hashed_pass.decode()
+        user.iid = iid
+        user.username = username
+        try:   
 
-                songs = get_songs(user)
-                return {'user': user, 'token': token}
+            token = gen_token({'email' : email, 'username' : username, 'iid' : iid, 'password' : user.password}, {'m' : 5})
     
-    iid = gen_id(7)
-    hashed_pass = bcrypt.generate_password_hash(password)
-    existing_username = User.objects(username=username)
-    if existing_username:
-        return {'message' : f'User with username {username} already exists!'}, 400
-    if existing_email:
-        return {'message' : f'User with email {email} already exists!'}, 400
-    user = User()
-    for key, value in request.form.items():
-        setattr(user, key, value)
-    if not validate_email(email):
-        return {'message' : f'Please enter a valid email address.'}, 400
-    user.password = hashed_pass.decode()
-    user.iid = iid
-    user.username = username
-    try:   
-               
-        token = gen_token({'email' : email, 'username' : username, 'iid' : iid, 'password' : user.password}, 48)
-  
-        url = f'{os.getenv("CLIENT_URL")}/auth/confirm?token={token}'
-        
-        return send_email(
-            subject= "TunedBass validation email",
-             message = f"""
-             <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style type="text/css">
-    
-    
-                .TunedBass{{
-                    font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
-                    margin: auto;
-                    padding: 10px;
-                    color: black;
-                   
-                }}
-    
-    
-                   
-                  
-    
-                .btn {{
-                    cursor: pointer;
-                    display: inline-block;
-                    min-height: 1em;
-                    outline: 0;
-                    border: none;
-                    vertical-align: baseline;
-                    background: #e0e1e2 none;
-                    color: rgba(0,0,0,.6);
-                    font-family: Lato,"Helvetica Neue",Arial,Helvetica,sans-serif;
-                    margin: 0 .25em 0 0;
-                    padding: .78571429em 1.5em;
-                    text-transform: none;
-                    text-shadow: none;
-                    font-weight: 600;
-                    line-height: 1em;
-                    font-style: normal;
-                    text-align: center;
-                    text-decoration: none;
-                    border-radius: .28571429rem;
-                    box-shadow: inset 0 0 0 1px transparent,inset 0 0 0 0 rgba(34,36,38,.15);
-                    -webkit-user-select: none;
-                    -ms-user-select: none;
-                    user-select: none;
-                    transition: opacity .1s ease,background-color .1s ease,color .1s ease,box-shadow .1s ease,background .1s ease;
-                    will-change: "";
-                    -webkit-tap-highlight-color: transparent;
-                }}
-                .btn-primary {{
-                    color: #fff !important;
-                    background-color: #0d6efd !important;
-                    border-color: #0d6efd !important;
-                    
-                }}
-        </style>
-    </head>
-    <body>
-    
-        <div class="TunedBass">
-    
-        <h1>Thank you for signing up to TunedBass!</h1>
-    
-        <p>To finish up, Click the button to verify your account.</p>
-        <a href="{url}" target="_blank" class="btn btn-primary">Verify</a>
-        
-        <p>If button did not work use this link:</p>
-        <a href="{url}" target="_blank">{url}</a>
-    
-        <h3>The verification is valid for only 48hrs</h3>
-    
-        <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
-        </div>
-        
-    </body>
-    </html>
-             """ ,
-              recipients=[email],
-               res='DONE')
-        
+            url = f'{os.getenv("CLIENT_URL")}/auth/confirm?token={token}'
+
+            temp_token = TempToken()
+            temp_token.token = token
+
+            OTP = gen_code()
+            temp_token.code = OTP
+
+            temp_token.save()
+            return send_email(
+                subject= "TunedBass validation email",
+                 message = f"""
+                 <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style type="text/css">
+
+
+                    .TunedBass{{
+                        font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
+                        margin: auto;
+                        padding: 10px;
+                        color: black;
+
+                    }}
+
+
+
+
+
+                    .btn {{
+                        cursor: pointer;
+                        display: inline-block;
+                        min-height: 1em;
+                        outline: 0;
+                        border: none;
+                        vertical-align: baseline;
+                        background: #e0e1e2 none;
+                        color: rgba(0,0,0,.6);
+                        font-family: Lato,"Helvetica Neue",Arial,Helvetica,sans-serif;
+                        margin: 0 .25em 0 0;
+                        padding: .78571429em 1.5em;
+                        text-transform: none;
+                        text-shadow: none;
+                        font-weight: 600;
+                        line-height: 1em;
+                        font-style: normal;
+                        text-align: center;
+                        text-decoration: none;
+                        border-radius: .28571429rem;
+                        box-shadow: inset 0 0 0 1px transparent,inset 0 0 0 0 rgba(34,36,38,.15);
+                        -webkit-user-select: none;
+                        -ms-user-select: none;
+                        user-select: none;
+                        transition: opacity .1s ease,background-color .1s ease,color .1s ease,box-shadow .1s ease,background .1s ease;
+                        will-change: "";
+                        -webkit-tap-highlight-color: transparent;
+                    }}
+                    .btn-primary {{
+                        color: #fff !important;
+                        background-color: #0d6efd !important;
+                        border-color: #0d6efd !important;
+
+                    }}
+            </style>
+        </head>
+        <body>
+
+            <div class="TunedBass">
+
+            <h1>Thank you for signing up to TunedBass!</h1>
+
+            <p>Here is your OTP: {temp_token.code}</p>
+
+            <h3>The OTP is valid only for 5 minutes.</h3>
+
+            <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
+            </div>
+
+        </body>
+        </html>
+                 """ ,
+                  recipients=[email],
+                   res={'token': token})
+
+        except Exception as e:
+            print(e)
+            return Response(
+                response= 'Something went wrong!',
+                status= 500,
+            )
     except Exception as e:
-        print(e)
-        return Response(
-            response= 'Something went wrong!',
-            status= 500,
-        )
+            print(e)
+            return 'Something went wrong', 500
 
 @router.post('/auth/getuser')
 @jwt_required()
+
+
 def get_user():
     email = validate(request)['sub']
     user = User.objects(email = email).first()
@@ -312,8 +392,6 @@ def login():
     if user:
 
         password_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), password)
-        print(password)
-        print(password_correct)
         if password_correct:
             token = gen_token(email)
             
