@@ -1,13 +1,13 @@
 
 from flask import Flask,jsonify, request, Response, Blueprint
-
+from threading import Thread
 from user.models import User, AnonymousUser as AU
 from song.models import Song
 from temps.models import TempPath, TempToken
 import song.routes as song_routes
 import jwt, datetime,json,random, string, uuid
 from dotenv import load_dotenv
-import os, cloudinary,json, requests, re
+import os, cloudinary,json, requests, re, time, asyncio
 import cloudinary.uploader
 from flask_bcrypt import Bcrypt
 from random import *
@@ -175,13 +175,19 @@ def gen_code():
     c = fun()
     return c
 
-@router.get('/testcodes')
-def testcodes():
+
+async def fun():
+    print('This is fun')
+@router.get('/test')
+def test():
 
     
-
-    code = gen_code()
-    return {'OPT' : f'tb_{code}'}
+    def funo():
+        time.sleep(5)
+        print('Hello')
+    thread = Thread(target=funo)
+    thread.start()
+    return 'ok'
 
 @router.post('/auth/otp')
 def otp():
@@ -210,6 +216,9 @@ def otp():
                 user = user._data
                 del user['password']
                 user['id'] = str(user['id'])
+
+                #delete token
+                tempTkn.delete()
                 return {'user' : user, 'token' : gen_token(user['email'], {'h' : 24})}
         else:
             return {'msg' : 'Invalid code'}, 400
@@ -229,6 +238,7 @@ def signup():
         username = request.form.get('username')
 
         email = request.form.get('email')
+        oiid = request.form.get('iid')
         password = request.form.get('password')
         existing_email = User.objects(email=email)
 
@@ -261,7 +271,10 @@ def signup():
             setattr(user, key, value)
         if not validate_email(email):
             return {'message' : f'Please enter a valid email address.'}, 400
-        user.password = hashed_pass.decode()
+        if oiid:
+            user.password = password
+        else:
+            user.password = hashed_pass.decode()
         user.iid = iid
         user.username = username
         try:   
@@ -277,6 +290,14 @@ def signup():
             temp_token.code = OTP
 
             temp_token.save()
+
+            def del_tkn():
+                time.sleep(300)
+                temp_token.delete()
+                print('Token expred and deleted.')
+            thread = Thread(target=del_tkn)
+            thread.start()
+            #return {'token': token, 'OTP': OTP}
             return send_email(
                 subject= "TunedBass validation email",
                  message = f"""
