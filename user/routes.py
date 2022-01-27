@@ -196,7 +196,7 @@ def otp():
         OTP = request.form.get('OTP');
         token = request.form.get('tkn');
 
-        tempTkn = TempToken.objects(code=OTP).first();
+        tempTkn = TempToken.objects(code=OTP, token=token).first();
         if tempTkn:
             data = jwt.decode(tempTkn.token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
             info = data['sub']
@@ -362,11 +362,12 @@ def signup():
             <div class="TunedBass">
 
             <h1>Thank you for signing up to TunedBass!</h1>
-
-            <p>Here is your OTP: {temp_token.code}</p>
-
+               
+            <p>Here is your OTP:</p>
+            <p>Do not share this OTP with anyone!</p>
+            <p style="text-align: center; color: rgb(223, 101, 1);font-size: 25px;font-weight: bold;letter-spacing: 2.5px">{temp_token.code}</p>
             <h3>The OTP is valid only for 5 minutes.</h3>
-
+            
             <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
             </div>
 
