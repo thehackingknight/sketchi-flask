@@ -13,7 +13,7 @@ from flask_bcrypt import Bcrypt
 from random import *
 
 from flask_mail import Mail, Message
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from media.models import Media
@@ -279,8 +279,9 @@ def signup():
         user.username = username
         try:   
 
-            token = gen_token({'email' : email, 'username' : username, 'iid' : iid, 'password' : user.password}, {'m' : 5})
-    
+            identity = {'email' : email, 'username' : username, 'iid' : iid, 'password' : user.password}
+            token = gen_token(identity, {'m' : 5})
+            r_token = create_refresh_token(identity)
             url = f'{os.getenv("CLIENT_URL")}/auth/confirm?token={token}'
 
             temp_token = TempToken()
@@ -294,10 +295,10 @@ def signup():
             def del_tkn():
                 time.sleep(300)
                 temp_token.delete()
-                print('Token expred and deleted.')
+                print('Code expred and deleted.')
             thread = Thread(target=del_tkn)
             thread.start()
-            #return {'token': token, 'OTP': OTP}
+            #return {'token': token, 'OTP': OTP, 'r_token' : r_token}
             return send_email(
                 subject= "TunedBass validation email",
                  message = f"""
@@ -386,6 +387,113 @@ def signup():
     except Exception as e:
             print(e)
             return 'Something went wrong', 500
+
+@router.post('/auth/code/reset')
+def reset_code():
+    token = request.form.get('tkn');
+    r_token = request.form.get('r_tkn');
+    #temp_token = TempToken.objects(token=token).first();
+    temp_token = TempToken()
+    if True:
+        info = jwt.decode(r_token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+        identity = info['sub']
+        token = gen_token(identity, {'m' : 5})
+        OTP = gen_code()
+
+        temp_token.token = token
+        temp_token.code = OTP
+        temp_token.save()
+
+        def del_code():
+            time.sleep(300)
+            temp_token.delete()
+            print('Code expired')
+
+        thread  = Thread(target=del_code)
+        thread.start()
+
+        #return {'token': token, 'OTP': OTP}
+        return send_email(
+                    subject= "TunedBass validation email",
+                     message = f"""
+                     <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style type="text/css">
+
+
+                        .TunedBass{{
+                            font: medium/ 1.5  Arial,Helvetica,sans-serif !important;
+                            margin: auto;
+                            padding: 10px;
+                            color: black;
+
+                        }}
+
+
+
+
+
+                        .btn {{
+                            cursor: pointer;
+                            display: inline-block;
+                            min-height: 1em;
+                            outline: 0;
+                            border: none;
+                            vertical-align: baseline;
+                            background: #e0e1e2 none;
+                            color: rgba(0,0,0,.6);
+                            font-family: Lato,"Helvetica Neue",Arial,Helvetica,sans-serif;
+                            margin: 0 .25em 0 0;
+                            padding: .78571429em 1.5em;
+                            text-transform: none;
+                            text-shadow: none;
+                            font-weight: 600;
+                            line-height: 1em;
+                            font-style: normal;
+                            text-align: center;
+                            text-decoration: none;
+                            border-radius: .28571429rem;
+                            box-shadow: inset 0 0 0 1px transparent,inset 0 0 0 0 rgba(34,36,38,.15);
+                            -webkit-user-select: none;
+                            -ms-user-select: none;
+                            user-select: none;
+                            transition: opacity .1s ease,background-color .1s ease,color .1s ease,box-shadow .1s ease,background .1s ease;
+                            will-change: "";
+                            -webkit-tap-highlight-color: transparent;
+                        }}
+                        .btn-primary {{
+                            color: #fff !important;
+                            background-color: #0d6efd !important;
+                            border-color: #0d6efd !important;
+
+                        }}
+                </style>
+            </head>
+            <body>
+
+                <div class="TunedBass">
+
+                <h1>Thank you for signing up to TunedBass!</h1>
+
+                <p>Here is your OTP:</p>
+                <p>Do not share this OTP with anyone!</p>
+                <p style="text-align: center; color: rgb(223, 101, 1);font-size: 25px;font-weight: bold;letter-spacing: 2.5px">{temp_token.code}</p>
+                <h3>The OTP is valid only for 5 minutes.</h3>
+
+                <p>For support please contact us at <a href="mailto:admin@tunedbass.com">admin@tunedbass.com</a></p>
+                </div>
+
+            </body>
+            </html>
+                     """ ,
+                      recipients=[email],
+                       res={'token': token})
+
+    else:
+        return 'Invalid token', 400
 
 @router.post('/auth/getuser')
 @jwt_required()
