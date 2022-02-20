@@ -99,7 +99,7 @@ def get_songs(uploader_id):
 
         data.append(song)
     return data
-
+ 
 
 def validate_email(email):
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
@@ -144,7 +144,7 @@ def gen_token(identity, time={'h' : 24}):
 
 @router.route('/users', methods=['GET'])
 def users():
-
+    
     users = User.objects()
     
     def clean_users(user):
@@ -298,7 +298,7 @@ def signup():
                 print('Code expred and deleted.')
             thread = Thread(target=del_tkn)
             thread.start()
-            #return {'token': token, 'OTP': OTP, 'r_token' : r_token}
+            return {'token': token, 'OTP': OTP, 'r_token' : r_token}
             return send_email(
                 subject= "TunedBass validation email",
                  message = f"""
@@ -412,7 +412,7 @@ def reset_code():
         thread  = Thread(target=del_code)
         thread.start()
 
-        #return {'token': token, 'OTP': OTP}
+        return {'token': token, 'OTP': OTP}
         return send_email(
                     subject= "TunedBass validation email",
                      message = f"""

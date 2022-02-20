@@ -579,20 +579,54 @@ def comms():
 def search():
 
     params = request.args
+    def make_low(word):
+
+        return word['text'].lower() if type(word) != str else word.lower()
 
     if 'q' in params:
         q = params['q']
-
+        words = q.split(' ')
         songs = []
         for song in Song.objects(title__icontains=q):
             songs.append(song)
         for song in Song.objects(info__icontains=q):
             songs.append(song)
+        
+        for word in words:
+            for song in Song.objects(title__icontains=word):
+                if song not in songs:
+                    songs.append(song)
+            for song in Song.objects(info__icontains=word):
+                if song not in songs:
+                    pass
+                    #songs.append(song)
+            for song in Song.objects():
+                if song not in songs:
+                    #print(song.tags)
+                    for tag in list(map(make_low, song.tags)):
+                        #print(tag)
+                        # check if tag contains more than one word
+                        if len(tag.split(' ')) >= 2:
+
+                            words_in_tag = tag.split(' ')
+                            #print(words_in_tag)
+                            """if word.lower() in list(map(make_low, words_in_tag)):    
+                                songs.append(song)"""
+                            for w in words_in_tag:
+                                #print(w, word)
+                                if word[0:2].lower() == w[0:2].lower():
+                                    songs.append(song)
+                    if word.lower() in list(map(make_low, song.tags)):
+                        
+                        songs.append(song)
+            
         artists = []
         for a in User.objects(username__icontains=q):
             artists.append(a)
         for a in User.objects(bio__icontains=q):
             artists.append(a)
+
+
         def clean_replies(resp):
             by = User.objects(iid=resp.by)[0].to_json()
             resp.by = json.loads(by)
@@ -605,8 +639,10 @@ def search():
             return json.loads(comment.to_json())
 
         def clean_songs(song):
-            uploader = User.objects(iid=song.uploader)[0].to_json()
-            song.uploader = json.loads(uploader)
+            uploader = User.objects(iid=song.uploader).first()
+            if uploader:
+                uploader = uploader.to_json()
+                song.uploader = json.loads(uploader)
             song.comments = list(map(clean_comments, song.comments))
             song = song.to_json()
             return json.loads(song)
@@ -619,6 +655,12 @@ def search():
         artsts = list(map(clean_users, artists))
 
         sngs = list(map(clean_songs, songs))
+
+        def test_songs(song):
+            return song['title']
+        def test_artists(artist):
+            return artist['username']
+        #return {'songs' : list(map(test_songs,sngs)), 'artists' : list(map(test_artists, artsts))}
         return {'songs' : sngs, 'artists' : artsts}
 
 
@@ -656,3 +698,78 @@ def get_blob():
         return res.text
     else:
         return '', 400
+
+@router.get('/all')
+def get_all():
+    args = request.args
+    tracks = Song.objects()
+    if 'ids' in args:
+        try:
+            ids = json.loads(args['ids'])
+            tracks = Song.objects(iid__nin=ids)[0 : 10]
+        except Exception as e:
+            print(e)
+            return 'Something went wrong', 500
+        
+    if 'by' in args:
+        tracks = Song.objects(uploader=args['by'])
+
+    if 'rt' in args:
+        song = Song.objects(iid=args['rt']).first()
+        filters = Q(uploader=song.uploader)
+        filters  | Q(album=song.album) if song.album else ''
+        tracks = Song.objects(filters)
+    #else:
+    #return {'message': 'Please provide list of IDS'}, 400
+
+
+    params = request.args
+    if 'genre' in params:
+        genre = params['genre']
+        tracks = Song.objects(genre = genre)
+        if genre == 'all':
+            tracks = Song.objects()
+    if 'iid' in params:
+        iid = params['iid']
+        tracks = Song.objects(iid = iid)
+        if not len(tracks):
+            return 'Song not found', 404
+
+
+    def clean_replies(resp):
+        by = User.objects(iid=resp.by)[0].to_json()
+        resp.by = json.loads(by)
+        return json.loads(resp.to_json())
+
+    def clean_comments(comment):
+        commenter = User.objects(iid=comment.commenter)[0].to_json()
+        comment.commenter = json.loads(commenter)
+        comment.replies = list(map(clean_replies, comment.replies))
+        return json.loads(comment.to_json())
+
+    def clean_songs(song):
+        uploader = User.objects(iid=song.uploader)[0].to_json()
+        song.uploader = json.loads(uploader)
+        song.comments = list(map(clean_comments, song.comments))
+        song.url = create_access_token(identity={'url': song.url})
+        song = song.to_json()
+        
+        return json.loads(song)
+
+    data = list(map(clean_songs, tracks))
+    users = User.objects()
+    
+    def clean_users(user):
+
+        user = user.to_json()
+        return json.loads(user)
+
+    data2 = list(map(clean_users, users))
+    #print(data)
+    try:
+        #print(tracks.get())
+        return {'songs': data, 'users': data2}, 200
+    except  Exception as e:
+        print(e)
+        return 'Exception' , 500
+
