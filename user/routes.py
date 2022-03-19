@@ -497,12 +497,24 @@ def reset_code():
 
 @router.post('/auth/getuser')
 @jwt_required()
-
-
 def get_user():
     email = validate(request)['sub']
     user = User.objects(email = email).first()
     token = request.headers['Authorization'].split(' ')[1]
+    if user:
+        return jsonify({'user' : user.to_json(), 'token': token})
+
+    else:
+        return 'invalid token', 404
+
+@router.post('/auth/mobile/getuser')
+def get_user_mobile():
+    token = request.args['token']
+    print(token)
+    info = jwt.decode(token, os.getenv('JWT_SECRET_KEY'), algorithms=['HS256'])
+    email = info['sub']
+    user = User.objects(email = email).first()
+    
     if user:
         return jsonify({'user' : user.to_json(), 'token': token})
 

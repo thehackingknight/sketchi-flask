@@ -1,5 +1,5 @@
 """Hello Analytics Reporting API V4."""
-
+import os
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -76,6 +76,13 @@ def main():
 
   print_response(response)
 
+
+with open('file.txt', 'r') as f:
+  with open('report.txt', 'w') as f2:
+    for w in f.read():
+      f2.write(w + '\n')
+  print('done')
 if __name__ == '__main__':
-  main()
+  pass
+  #main()
 
