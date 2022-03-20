@@ -203,6 +203,43 @@ def songs():
         return 'Exception' , 500
 
 
+@router.get('/related/songs')
+def related_songs():
+    
+    args = request.args
+    if 'song_id' in args:
+        song_id = args['song_id']
+        uploader_id = by =Song.objects(iid=song_id).first().uploader;
+        tracks = Song.objects(uploader=uploader_id);
+    def clean_replies(resp):
+        by = User.objects(iid=resp.by)[0].to_json()
+        resp.by = json.loads(by)
+        return json.loads(resp.to_json())
+
+    def clean_comments(comment):
+        commenter = User.objects(iid=comment.commenter)[0].to_json()
+        comment.commenter = json.loads(commenter)
+        comment.replies = list(map(clean_replies, comment.replies))
+        return json.loads(comment.to_json())
+
+    def clean_songs(song):
+        uploader = User.objects(iid=song.uploader)[0].to_json()
+        song.uploader = json.loads(uploader)
+        song.comments = list(map(clean_comments, song.comments))
+        song.url = create_access_token(identity={'url': song.url})
+        song = song.to_json()
+        
+        return json.loads(song)
+
+    data = list(map(clean_songs, tracks))
+    try:
+        #print(tracks.get())
+        return {'songs': data}, 200
+    except  Exception as e:
+        print(e)
+        return 'Exception' , 500
+
+
 
 @router.route('/songs/suggested', methods=['GET', 'POST'])
 def suggested():
@@ -302,9 +339,8 @@ def media(folder, filename):
         elif folder == 'images':
             filepath = 'sketchi/media/images/' + filename
             return send_file(filepath, download_name=filename)
-        with open(filepath, 'rb') as f:
 
-            return f.read()#send_file(filepath, attachment_filename='file', as_attachment=False)
+        return send_file(filepath, attachment_filename=filename, as_attachment=True)
     except Exception as e:
         print(e)
         return {'message': 'Could not find file specified'}, 404
