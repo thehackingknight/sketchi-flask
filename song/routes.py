@@ -207,6 +207,7 @@ def songs():
 def related_songs():
     
     args = request.args
+    tracks =  Song.objects()
     if 'song_id' in args:
         song_id = args['song_id']
         uploader_id = by =Song.objects(iid=song_id).first().uploader;
