@@ -522,6 +522,34 @@ def get_user_mobile():
         return 'invalid token', 404
     
 
+@router.route('/mobile/auth/login', methods=['POST', 'GET'])
+def mobile_login():
+    if request.method == 'GET':
+        return 'Ok'
+    else:
+        try:
+            data  = request.form
+            email = data['email']
+            password = data['password']
+            print(email)
+            user = User.objects(email=email).first()
+        except Exception as e:
+            print(e)
+            return {'msg' : 'Something went wrong'}, 500
+
+
+    if user:
+
+        password_correct = bcrypt.check_password_hash(bytes(user.password, encoding='utf-8'), password)
+        if password_correct:
+            token = gen_token(email)
+            
+            data = user.to_json()
+            return {'user' : json.loads(data), 'token' : token}
+        else:
+            return {"message" : "Incorrect Password"}, 400
+    else:
+        return {"message" : "User does not exist"}, 400
 @router.route('/auth/login', methods=['POST'])
 
 def login():
